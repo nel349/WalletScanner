@@ -1,4 +1,4 @@
-import { Connection, PublicKey } from '@solana/web3.js';
+import { ConfirmedSignatureInfo, Connection, PublicKey } from '@solana/web3.js';
 import { WalletResponse, BalanceResponse, TransactionResponse, ErrorResponse } from '../types';
 
 export class SolanaService {
@@ -42,7 +42,7 @@ export class SolanaService {
   async getTransactions(address: string): Promise<TransactionResponse> {
     try {
       const publicKey = new PublicKey(address);
-      const transactions = await this.connection.getSignaturesForAddress(publicKey);
+      const transactions: ConfirmedSignatureInfo[] = await this.connection.getSignaturesForAddress(publicKey);
       return {
         transactions,
         address: publicKey.toString()

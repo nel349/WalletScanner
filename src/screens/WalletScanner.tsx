@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { validateWalletAddress, getWalletBalance, getWalletTransactions } from '../utils/solana';
+import { ConfirmedSignatureInfo, Transaction } from '@solana/web3.js';
 
 const WalletScanner = () => {
   const [walletAddress, setWalletAddress] = useState('AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<ConfirmedSignatureInfo[]>([]);
 
   const handleScan = async () => {
     if (!walletAddress) {
@@ -30,7 +31,7 @@ const WalletScanner = () => {
       ]);
       
       setBalance(walletBalance);
-      setTransactions(walletTransactions);
+      setTransactions(walletTransactions.transactions);
     } catch (error) {
       setError('Error scanning wallet. Please try again.');
       console.error('Scan error:', error);
@@ -85,7 +86,7 @@ const WalletScanner = () => {
           {transactions.map((tx, index) => (
             <View key={index} style={styles.transactionItem}>
               <Text style={styles.transactionText}>
-                {new Date(tx.blockTime * 1000).toLocaleDateString()}
+                {new Date(tx.blockTime ?? 0 * 1000).toLocaleDateString()}
               </Text>
             </View>
           ))}
