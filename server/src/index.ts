@@ -2,9 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import { Connection, PublicKey } from '@solana/web3.js';
 import walletRoutes from './routes/wallet';
+import { networkInterfaces } from 'os';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = Number(process.env.PORT) || 3000;
 
 // Middleware
 app.use(cors());
@@ -19,11 +20,26 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-
-
 // Routes
 app.use('/api/wallet', walletRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-}); 
+// Get local IP address
+const getLocalIpAddress = () => {
+  const interfaces = networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name] || []) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
+const localIp = getLocalIpAddress();
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server is running on:`);
+  console.log(`- Local: http://localhost:${port}`);
+  console.log(`- Network: http://${localIp}:${port}`);
+});
