@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { validateWalletAddress, getWalletBalance, getWalletTransactions } from '../utils/solana';
-import { ConfirmedSignatureInfo, Transaction } from '@solana/web3.js';
+import { ConfirmedSignatureInfo } from '@solana/web3.js';
+import TransactionList from '../components/TransactionList';
 
 const WalletScanner = () => {
   const [walletAddress, setWalletAddress] = useState('AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf');
@@ -81,16 +82,7 @@ const WalletScanner = () => {
       )}
 
       {transactions.length > 0 && (
-        <View style={styles.resultContainer}>
-          <Text style={styles.resultTitle}>Recent Transactions</Text>
-          {transactions.map((tx, index) => (
-            <View key={index} style={styles.transactionItem}>
-              <Text style={styles.transactionText}>
-                {new Date(tx.blockTime ?? 0 * 1000).toLocaleDateString()}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <TransactionList transactions={transactions} />
       )}
     </View>
   );
@@ -164,15 +156,6 @@ const styles = StyleSheet.create({
     color: '#4B5CFA',
     fontSize: 24,
     fontWeight: 'bold',
-  },
-  transactionItem: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#3A4556',
-  },
-  transactionText: {
-    color: '#A0AEC0',
-    fontSize: 14,
   },
 });
 
