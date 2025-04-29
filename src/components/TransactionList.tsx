@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Linking, Alert } from 'react-native';
 import { ConfirmedSignatureInfo } from '@solana/web3.js';
 
 interface TransactionListProps {
@@ -23,11 +23,40 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
     }
   };
 
-  const handleTransactionPress = (signature: string) => {
+  const handleTransactionPress = async (signature: string) => {
     const solscanUrl = `https://solscan.io/tx/${signature}`;
-    Linking.openURL(solscanUrl).catch(err => {
-      console.error('Error opening URL:', err);
-    });
+    
+    try {
+      const supported = await Linking.canOpenURL(solscanUrl);
+      
+      if (supported) {
+        setTimeout(async () => {
+          try {
+            await Linking.openURL(solscanUrl);
+          } catch (error) {
+            console.error('Error opening URL:', error);
+            Alert.alert(
+              'Error',
+              'An error occurred while trying to open Solscan.',
+              [{ text: 'OK' }]
+            );
+          }
+        }, 100);
+      } else {
+        Alert.alert(
+          'Error',
+          'Unable to open Solscan. Please check your internet connection.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error checking URL support:', error);
+      Alert.alert(
+        'Error',
+        'An error occurred while trying to open Solscan.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   return (
