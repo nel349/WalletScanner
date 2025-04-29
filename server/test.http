@@ -1,0 +1,35 @@
+# Wallet Scanner API Tests
+@localUrl = http://localhost:3000
+@prodUrl = https://wallet-scanner-server.vercel.app/
+
+### Health Check (local)
+GET {{localUrl}}/
+Content-Type: application/json
+
+### Health Check (production)
+GET {{prodUrl}}/
+Content-Type: application/json
+
+### Validate Wallet (local)
+GET {{localUrl}}/api/wallet/validate/5FHwkrdxkRXbrcMpLNf2Yd9ztnGLYUPzK3n2joTEQv1c
+Content-Type: application/json
+
+### Validate Wallet (production)
+GET {{prodUrl}}/api/wallet/validate/5FHwkrdxkRXbrcMpLNf2Yd9ztnGLYUPzK3n2joTEQv1c
+Content-Type: application/json
+
+### Get Wallet Balance (local)
+GET {{localUrl}}/api/wallet/balance/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
+Content-Type: application/json
+
+### Get Wallet Balance (production)
+GET {{prodUrl}}/api/wallet/balance/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
+Content-Type: application/json
+
+### Get Wallet Transactions (local)
+GET {{localUrl}}/api/wallet/transactions/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
+Content-Type: application/json
+
+### Get Wallet Transactions (production)
+GET {{prodUrl}}/api/wallet/transactions/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
+Content-Type: application/json
