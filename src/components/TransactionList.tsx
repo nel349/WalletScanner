@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { ConfirmedSignatureInfo } from '@solana/web3.js';
 
 interface TransactionListProps {
@@ -23,12 +23,24 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
     }
   };
 
+  const handleTransactionPress = (signature: string) => {
+    const solscanUrl = `https://solscan.io/tx/${signature}`;
+    Linking.openURL(solscanUrl).catch(err => {
+      console.error('Error opening URL:', err);
+    });
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Recent Transactions</Text>
       <ScrollView style={styles.scrollView}>
         {transactions.map((tx, index) => (
-          <View key={index} style={styles.transactionItem}>
+          <TouchableOpacity
+            key={index}
+            style={styles.transactionItem}
+            onPress={() => handleTransactionPress(tx.signature)}
+            activeOpacity={0.7}
+          >
             <View style={styles.transactionHeader}>
               <Text style={styles.signature} numberOfLines={1} ellipsizeMode="middle">
                 {tx.signature}
@@ -48,7 +60,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
             {tx.err && (
               <Text style={styles.error}>Error: {tx.err.toString()}</Text>
             )}
-          </View>
+            <Text style={styles.linkText}>Tap to view on Solscan</Text>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     </View>
@@ -108,6 +121,12 @@ const styles = StyleSheet.create({
     color: '#FF4444',
     fontSize: 12,
     marginTop: 4,
+  },
+  linkText: {
+    color: '#4B5CFA',
+    fontSize: 12,
+    marginTop: 8,
+    textAlign: 'right',
   },
 });
 
