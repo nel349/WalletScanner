@@ -33,11 +33,3 @@ Content-Type: application/json
 ### Get Wallet Transactions (production)
 GET {{prodUrl}}/api/wallet/transactions/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
 Content-Type: application/json
-
-### Get Wallet Transactions with limit (local)
-GET {{localUrl}}/api/wallet/transactions/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf?limit=10
-Content-Type: application/json
-
-### Get Wallet Transactions with limit (production)
-GET {{prodUrl}}/api/wallet/transactions/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf?limit=10
-Content-Type: application/json
