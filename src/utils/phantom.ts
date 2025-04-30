@@ -16,7 +16,7 @@ const SESSION_KEY = 'PHANTOM_SESSION';
 const APP_URL = Platform.OS === 'web' 
   ? 'walletscanner://' 
   : __DEV__ 
-    ? 'exp://192.168.1.175:8081/--/wallet-connect' // Use the Expo development URL with path during development 
+    ? 'exp://192.168.1.175:8081/' // Use the Expo development URL with path during development 
     : 'walletscanner://'; // Use the app's scheme in production
 
 // Generate a new keypair for this session

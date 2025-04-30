@@ -6,7 +6,14 @@
     "start": "npx expo start",
     "android": "npx expo start --android",
     "ios": "npx expo start --ios",
-    "web": "npx expo start --web"
+    "web": "npx expo start --web",
+    "prod": "npx expo start --no-dev",
+    "prod:android": "npx expo start --android --no-dev",
+    "prod:ios": "npx expo start --ios --no-dev",
+    "build:android": "npx expo run:android --variant release",
+    "build:ios": "npx expo run:ios --configuration Release",
+    "eas:android": "npx eas build --platform android",
+    "eas:ios": "npx eas build --platform ios"
   },
   "dependencies": {
     "@expo/metro-runtime": "^4.0.1",
