@@ -16,7 +16,7 @@ const SESSION_KEY = 'PHANTOM_SESSION';
 const APP_URL = Platform.OS === 'web' 
   ? 'walletscanner://' 
   : __DEV__ 
-    ? 'exp://192.168.1.175:8081' // Use the Expo development URL during development 
+    ? 'exp://192.168.1.175:8081/--/wallet-connect' // Use the Expo development URL with path during development 
     : 'walletscanner://'; // Use the app's scheme in production
 
 // Generate a new keypair for this session
@@ -80,7 +80,8 @@ export const connectPhantomWallet = async (): Promise<PhantomWalletConnectionRes
     const params = new URLSearchParams({
       dapp_encryption_public_key: keypair.publicKey,
       redirect_link: APP_URL,
-      cluster: 'mainnet-beta'
+      cluster: 'mainnet-beta',
+      app_url: APP_URL // Add this for better visibility
     });
     
     const url = `https://phantom.app/ul/v1/connect?${params.toString()}`;
@@ -262,13 +263,26 @@ export const usePhantomWallet = () => {
     const handleUrl = async ({ url }: { url: string }) => {
       console.log('Received deep link:', url);
       
+      // For development mode, we might get a callback without the expected parameters
+      if (__DEV__ && url.startsWith('exp://') && !url.includes('data=')) {
+        console.log('Development mode detected - using simulated Phantom connection');
+        // In development mode, we'll simulate a successful connection
+        // Store a test address for development
+        const testWalletAddress = '11111111111111111111111111111111';
+        await AsyncStorage.setItem(WALLET_STORAGE_KEY, testWalletAddress);
+        setIsConnected(true);
+        setWalletAddress(testWalletAddress);
+        return;
+      }
+      
       // Both Expo development URL and walletscanner:// URL can be phantom callbacks
       const isPhantomCallback = (
         (url.includes('data=') && url.includes('nonce=')) || 
-        (url.includes('exp://') && !url.includes('phantom'))
+        (url.includes('phantom_encryption_public_key='))
       );
       
       if (isPhantomCallback) {
+        console.log('Phantom callback detected, parsing parameters...');
         const result = await handlePhantomResponse(url);
         if (result.success && result.publicKey) {
           console.log('Successfully connected Phantom wallet with public key:', result.publicKey);

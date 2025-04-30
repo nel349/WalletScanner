@@ -41,6 +41,7 @@ function App() {
     });
     
     console.log('Simulating Phantom callback with URL:', testUrl);
+    console.log('Current app prefix:', ExpoLinking.createURL(''));
     
     // Use the Linking API to simulate receiving the URL
     if (await Linking.canOpenURL(testUrl)) {
@@ -49,7 +50,7 @@ function App() {
   };
 
   // Only show the debug button in development
-  const isDev = true;
+  const isDev = false;
 
   return (
     <SafeAreaProvider>
