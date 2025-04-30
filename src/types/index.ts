@@ -18,4 +18,10 @@ export interface TransactionResponse {
 export interface ErrorResponse {
   error: string;
   message: string;
+}
+
+export interface PhantomWalletConnectionResponse {
+  success: boolean;
+  publicKey?: string;
+  error?: string;
 } 

@@ -1,16 +1,27 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Linking } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { validateWalletAddress, getWalletBalance, getWalletTransactions } from '../utils/solana';
+import { usePhantomWallet, getPhantomWalletBalance } from '../utils/phantom';
 import { ConfirmedSignatureInfo } from '@solana/web3.js';
 import TransactionList from '../components/TransactionList';
 
 const WalletScanner = () => {
   const [walletAddress, setWalletAddress] = useState('AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf');
   const [isLoading, setIsLoading] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<ConfirmedSignatureInfo[]>([]);
+  const { isConnected, walletAddress: phantomAddress, connect, disconnect } = usePhantomWallet();
+
+  // When Phantom wallet connects, update the wallet address
+  useEffect(() => {
+    if (isConnected && phantomAddress) {
+      setWalletAddress(phantomAddress);
+      setIsConnecting(false);
+    }
+  }, [isConnected, phantomAddress]);
 
   const handleScan = async () => {
     if (!walletAddress) {
@@ -26,13 +37,27 @@ const WalletScanner = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const [walletBalance, walletTransactions] = await Promise.all([
-        getWalletBalance(walletAddress),
-        getWalletTransactions(walletAddress)
-      ]);
-      
-      setBalance(walletBalance);
-      setTransactions(walletTransactions.transactions);
+      // If using connected Phantom wallet, fetch balance directly
+      if (isConnected && walletAddress === phantomAddress) {
+        const phantomBalance = await getPhantomWalletBalance();
+        const walletTransactions = await getWalletTransactions(walletAddress);
+        
+        if (phantomBalance !== null) {
+          setBalance(phantomBalance);
+          setTransactions(walletTransactions.transactions);
+        } else {
+          throw new Error('Failed to fetch Phantom wallet balance');
+        }
+      } else {
+        // Use regular API for non-connected wallets
+        const [walletBalance, walletTransactions] = await Promise.all([
+          getWalletBalance(walletAddress),
+          getWalletTransactions(walletAddress)
+        ]);
+        
+        setBalance(walletBalance);
+        setTransactions(walletTransactions.transactions);
+      }
     } catch (error) {
       setError('Error scanning wallet. Please try again.');
       console.error('Scan error:', error);
@@ -41,10 +66,92 @@ const WalletScanner = () => {
     }
   };
 
+  const handleConnectWallet = async () => {
+    setError(null);
+    setIsConnecting(true);
+    
+    try {
+      const supported = await Linking.canOpenURL('https://phantom.app');
+      
+      if (!supported) {
+        setError('Phantom wallet app is not installed on this device');
+        setIsConnecting(false);
+        Alert.alert(
+          'Phantom Not Found',
+          'Please install the Phantom wallet app from the App Store or Google Play Store.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      
+      const result = await connect();
+      
+      if (!result.success) {
+        setError(result.error || 'Failed to connect to Phantom wallet');
+        setIsConnecting(false);
+      } else {
+        // Connection successful, automatically scan the wallet
+        if (result.publicKey) {
+          setWalletAddress(result.publicKey);
+          // Wait for state to update before scanning
+          setTimeout(() => {
+            handleScan();
+          }, 500);
+        }
+      }
+    } catch (error) {
+      setError('Error connecting to Phantom wallet');
+      setIsConnecting(false);
+      console.error('Connect error:', error);
+    }
+  };
+
+  const handleDisconnectWallet = async () => {
+    try {
+      await disconnect();
+    } catch (error) {
+      setError('Error disconnecting from Phantom wallet');
+      console.error('Disconnect error:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       <Text style={styles.title}>Wallet Scanner</Text>
+      
+      {isConnected ? (
+        <View style={styles.connectedContainer}>
+          <Text style={styles.connectedText}>Connected to Phantom (Demo)</Text>
+          <TouchableOpacity
+            style={styles.phantomButton}
+            onPress={handleDisconnectWallet}
+          >
+            <Text style={styles.buttonText}>Disconnect Wallet</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          <TouchableOpacity
+            style={styles.phantomButton}
+            onPress={handleConnectWallet}
+            disabled={isConnecting}
+          >
+            {isConnecting ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonText}>Connect Phantom Wallet</Text>
+            )}
+          </TouchableOpacity>
+          <Text style={styles.infoText}>
+            Phantom is a popular Solana wallet. Connect your wallet to see your balance and transactions.
+          </Text>
+          <Text style={styles.demoText}>
+            Note: This is a demo implementation that simulates connecting to Phantom wallet.
+          </Text>
+        </>
+      )}
+      
       <Text style={styles.subtitle}>Enter a Solana wallet address to scan</Text>
       
       <TextInput
@@ -107,6 +214,7 @@ const styles = StyleSheet.create({
     color: '#A0AEC0',
     marginBottom: 30,
     textAlign: 'center',
+    marginTop: 20,
   },
   input: {
     width: '100%',
@@ -125,6 +233,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
+  },
+  phantomButton: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#B829F8', // Purple for Phantom
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    marginTop: 10,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -156,6 +274,32 @@ const styles = StyleSheet.create({
     color: '#4B5CFA',
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  connectedContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  connectedText: {
+    color: '#4ADE80',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  infoText: {
+    fontSize: 12,
+    color: '#A0AEC0',
+    textAlign: 'center',
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  demoText: {
+    fontSize: 11,
+    color: '#FF9800',
+    textAlign: 'center',
+    marginBottom: 10,
+    fontStyle: 'italic',
   },
 });
 

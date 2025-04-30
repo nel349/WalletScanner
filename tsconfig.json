@@ -7,7 +7,9 @@
     "jsx": "react-native",
     "module": "esnext",
     "target": "esnext",
-    "lib": ["esnext"],
+    "lib": [
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "noEmit": true,
@@ -17,5 +19,6 @@
   "exclude": [
     "node_modules",
     "babel.config.js"
-  ]
+  ],
+  "extends": "expo/tsconfig.base"
 }
