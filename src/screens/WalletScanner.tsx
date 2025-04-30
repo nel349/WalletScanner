@@ -21,6 +21,7 @@ const WalletScanner = () => {
       setWalletAddress(phantomAddress);
       setIsConnecting(false);
       
+      console.log('Phantom wallet connected:', phantomAddress);
       // Auto-scan when wallet is connected
       // handleScan();
     }

@@ -49,7 +49,7 @@ function App() {
   };
 
   // Only show the debug button in development
-  const isDev = process.env.NODE_ENV === 'development' || __DEV__;
+  const isDev = true;
 
   return (
     <SafeAreaProvider>
