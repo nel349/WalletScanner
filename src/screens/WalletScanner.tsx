@@ -20,6 +20,9 @@ const WalletScanner = () => {
     if (isConnected && phantomAddress) {
       setWalletAddress(phantomAddress);
       setIsConnecting(false);
+      
+      // Auto-scan when wallet is connected
+      // handleScan();
     }
   }, [isConnected, phantomAddress]);
 
@@ -84,21 +87,11 @@ const WalletScanner = () => {
         return;
       }
       
-      const result = await connect();
+      await connect();
       
-      if (!result.success) {
-        setError(result.error || 'Failed to connect to Phantom wallet');
-        setIsConnecting(false);
-      } else {
-        // Connection successful, automatically scan the wallet
-        if (result.publicKey) {
-          setWalletAddress(result.publicKey);
-          // Wait for state to update before scanning
-          setTimeout(() => {
-            handleScan();
-          }, 500);
-        }
-      }
+      // Note: Connection result will be handled by the useEffect that watches phantomAddress
+      // The UI will automatically update when the deep link returns
+      
     } catch (error) {
       setError('Error connecting to Phantom wallet');
       setIsConnecting(false);
@@ -109,6 +102,9 @@ const WalletScanner = () => {
   const handleDisconnectWallet = async () => {
     try {
       await disconnect();
+      // Clear balance and transactions when disconnecting
+      setBalance(null);
+      setTransactions([]);
     } catch (error) {
       setError('Error disconnecting from Phantom wallet');
       console.error('Disconnect error:', error);
@@ -122,7 +118,7 @@ const WalletScanner = () => {
       
       {isConnected ? (
         <View style={styles.connectedContainer}>
-          <Text style={styles.connectedText}>Connected to Phantom (Demo)</Text>
+          <Text style={styles.connectedText}>Connected to Phantom</Text>
           <TouchableOpacity
             style={styles.phantomButton}
             onPress={handleDisconnectWallet}
@@ -145,9 +141,6 @@ const WalletScanner = () => {
           </TouchableOpacity>
           <Text style={styles.infoText}>
             Phantom is a popular Solana wallet. Connect your wallet to see your balance and transactions.
-          </Text>
-          <Text style={styles.demoText}>
-            Note: This is a demo implementation that simulates connecting to Phantom wallet.
           </Text>
         </>
       )}
@@ -292,15 +285,8 @@ const styles = StyleSheet.create({
     color: '#A0AEC0',
     textAlign: 'center',
     marginTop: 5,
-    marginBottom: 5,
-  },
-  demoText: {
-    fontSize: 11,
-    color: '#FF9800',
-    textAlign: 'center',
     marginBottom: 10,
-    fontStyle: 'italic',
-  },
+  }
 });
 
 export default WalletScanner; 
