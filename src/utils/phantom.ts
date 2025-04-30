@@ -12,7 +12,8 @@ const WALLET_STORAGE_KEY = 'PHANTOM_WALLET_ADDRESS';
 const SESSION_KEY = 'PHANTOM_SESSION';
 
 // Deep link URL for your app - this must match the scheme in app.json
-const APP_URL = 'walletscanner://onPhantomConnected';
+// Format should be: scheme:// (no path)
+const APP_URL = 'walletscanner://';
 
 // Generate a new keypair for this session
 const generateKeypair = () => {
@@ -57,6 +58,7 @@ export const connectPhantomWallet = async (): Promise<PhantomWalletConnectionRes
     const phantomIsInstalled = await Linking.canOpenURL('https://phantom.app');
     
     if (!phantomIsInstalled) {
+      console.error('Phantom wallet app is not installed');
       return {
         success: false,
         error: 'Phantom wallet app is not installed on this device',
@@ -65,6 +67,7 @@ export const connectPhantomWallet = async (): Promise<PhantomWalletConnectionRes
     
     // Generate keypair for this session
     const keypair = generateKeypair();
+    console.log('Generated keypair with public key:', keypair.publicKey);
     
     // Store keypair for later use
     await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(keypair));
@@ -77,6 +80,7 @@ export const connectPhantomWallet = async (): Promise<PhantomWalletConnectionRes
     });
     
     const url = `https://phantom.app/ul/v1/connect?${params.toString()}`;
+    console.log('Opening Phantom with URL:', url);
     
     // Open Phantom app
     await Linking.openURL(url);
@@ -98,19 +102,77 @@ export const connectPhantomWallet = async (): Promise<PhantomWalletConnectionRes
 // Handle the deep link response from Phantom
 export const handlePhantomResponse = async (url: string): Promise<PhantomWalletConnectionResponse> => {
   try {
+    console.log('Parsing Phantom response URL:', url);
+    
     // Parse the URL to get the data, nonce, and phantom_encryption_public_key
-    const urlObj = new URL(url);
+    let urlObj;
+    try {
+      urlObj = new URL(url);
+    } catch (e) {
+      console.error('Invalid URL format:', e);
+      // Handle URLs that might not have proper protocol
+      if (url.startsWith('walletscanner://')) {
+        // Try to parse it manually
+        const paramsString = url.split('?')[1];
+        if (!paramsString) {
+          return {
+            success: false,
+            error: 'No params in URL',
+          };
+        }
+        
+        // Create a simpler parser for the URL
+        const searchParams = new URLSearchParams(paramsString);
+        const data = searchParams.get('data');
+        const nonce = searchParams.get('nonce');
+        const phantomEncryptionPublicKey = searchParams.get('phantom_encryption_public_key');
+        
+        if (!data || !nonce || !phantomEncryptionPublicKey) {
+          console.error('Missing required params:', { data, nonce, phantomEncryptionPublicKey });
+          return {
+            success: false,
+            error: 'Missing required parameters from Phantom',
+          };
+        }
+        
+        return await processPhantomResponse(data, nonce, phantomEncryptionPublicKey);
+      }
+      
+      return {
+        success: false,
+        error: 'Invalid URL format',
+      };
+    }
+    
     const data = urlObj.searchParams.get('data');
     const nonce = urlObj.searchParams.get('nonce');
     const phantomEncryptionPublicKey = urlObj.searchParams.get('phantom_encryption_public_key');
     
     if (!data || !nonce || !phantomEncryptionPublicKey) {
+      console.error('Missing required params:', { data, nonce, phantomEncryptionPublicKey });
       return {
         success: false,
         error: 'Invalid response from Phantom',
       };
     }
     
+    return await processPhantomResponse(data, nonce, phantomEncryptionPublicKey);
+  } catch (error) {
+    console.error('Error handling Phantom response:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+};
+
+// Process the Phantom response parameters
+const processPhantomResponse = async (
+  data: string,
+  nonce: string,
+  phantomEncryptionPublicKey: string
+): Promise<PhantomWalletConnectionResponse> => {
+  try {
     // Get the stored session keypair
     const sessionData = await AsyncStorage.getItem(SESSION_KEY);
     if (!sessionData) {
@@ -130,6 +192,7 @@ export const handlePhantomResponse = async (url: string): Promise<PhantomWalletC
     
     // Decrypt the payload
     const payload = decryptPayload(data, nonce, sharedSecret);
+    console.log('Decrypted Phantom payload:', payload);
     
     if (payload.session) {
       // Store the wallet public key
@@ -147,7 +210,7 @@ export const handlePhantomResponse = async (url: string): Promise<PhantomWalletC
       };
     }
   } catch (error) {
-    console.error('Error handling Phantom response:', error);
+    console.error('Error processing Phantom response:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -190,11 +253,16 @@ export const usePhantomWallet = () => {
     
     // Handle deep link responses from Phantom
     const handleUrl = async ({ url }: { url: string }) => {
-      if (url.includes('onPhantomConnected')) {
+      console.log('Received deep link:', url);
+      // Check if this is a phantom callback (contains phantom data params)
+      if (url.includes('data=') && url.includes('nonce=')) {
         const result = await handlePhantomResponse(url);
         if (result.success && result.publicKey) {
+          console.log('Successfully connected Phantom wallet with public key:', result.publicKey);
           setIsConnected(true);
           setWalletAddress(result.publicKey);
+        } else {
+          console.error('Failed to connect Phantom wallet:', result.error);
         }
       }
     };
@@ -204,7 +272,8 @@ export const usePhantomWallet = () => {
     
     // Check for deep links that may have opened the app
     Linking.getInitialURL().then((initialUrl) => {
-      if (initialUrl && initialUrl.includes('onPhantomConnected')) {
+      if (initialUrl) {
+        console.log('App opened with URL:', initialUrl);
         handleUrl({ url: initialUrl });
       }
     });
