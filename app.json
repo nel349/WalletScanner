@@ -20,7 +20,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.walletscanner.app",
-      "associatedDomains": ["applinks:walletscanner.app"]
+      "associatedDomains": [
+        "applinks:walletscanner.app",
+        "applinks:walletscanner.app"
+      ],
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -46,6 +52,11 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": []
+    "plugins": [],
+    "extra": {
+      "eas": {
+        "projectId": "0808a65b-2d7e-48bf-a51f-ba619cc27fd1"
+      }
+    }
   }
 }
