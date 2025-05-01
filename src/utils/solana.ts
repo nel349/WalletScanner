@@ -44,15 +44,24 @@ export const validateWalletAddress = async (address: string): Promise<boolean> =
 
 export const getWalletTransactions = async (
   walletAddress: string,
-  limit: number = 5
+  options: { 
+    limit?: number,
+    before?: string 
+  } = {}
 ): Promise<TransactionResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/wallet/transactions/${walletAddress}`, {
+    const { limit = 20, before } = options;
+    let url = `${API_BASE_URL}/wallet/transactions/${walletAddress}?limit=${limit}`;
+    
+    if (before) {
+      url += `&before=${before}`;
+    }
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      // body: JSON.stringify({ address: walletAddress, limit }),
     });
     return handleApiError(response);
   } catch (error) {

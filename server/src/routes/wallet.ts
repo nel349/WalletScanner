@@ -27,7 +27,10 @@ router.get('/balance/:address', async (req, res) => {
 router.get('/transactions/:address', async (req, res) => {
   try {
     const { address } = req.params;
-    const result = await solanaService.getTransactions(address);
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+    const before = req.query.before as string | undefined;
+    
+    const result = await solanaService.getTransactions(address, { limit, before });
     res.json(result);
   } catch (error) {
     res.status(400).json(error);

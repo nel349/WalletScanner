@@ -39,13 +39,45 @@ export class SolanaService {
     }
   }
 
-  async getTransactions(address: string): Promise<TransactionResponse> {
+  async getTransactions(
+    address: string, 
+    options: { limit?: number; before?: string } = {}
+  ): Promise<TransactionResponse> {
     try {
+      const { limit = 20, before } = options;
       const publicKey = new PublicKey(address);
-      const transactions: ConfirmedSignatureInfo[] = await this.connection.getSignaturesForAddress(publicKey);
+      
+      // Get one extra transaction to determine if there are more
+      const fetchLimit = limit + 1;
+      
+      // Prepare options for getSignaturesForAddress
+      const fetchOptions: any = { limit: fetchLimit };
+      if (before) {
+        fetchOptions.before = before;
+      }
+      
+      // Fetch transactions with pagination
+      const transactions: ConfirmedSignatureInfo[] = 
+        await this.connection.getSignaturesForAddress(publicKey, fetchOptions);
+      
+      // Determine if there are more transactions
+      const hasMore = transactions.length > limit;
+      
+      // Remove the extra transaction if needed
+      const paginatedTransactions = hasMore 
+        ? transactions.slice(0, limit) 
+        : transactions;
+      
+      // Get the signature of the last transaction for the next batch
+      const nextBefore = paginatedTransactions.length > 0
+        ? paginatedTransactions[paginatedTransactions.length - 1].signature
+        : undefined;
+      
       return {
-        transactions,
-        address: publicKey.toString()
+        transactions: paginatedTransactions,
+        address: publicKey.toString(),
+        hasMore,
+        nextBefore
       };
     } catch (error) {
       throw {

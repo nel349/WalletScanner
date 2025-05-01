@@ -11,8 +11,10 @@ export interface BalanceResponse {
 }
 
 export interface TransactionResponse {
-  transactions: ConfirmedSignatureInfo[]; // You might want to type this more specifically based on your needs
+  transactions: ConfirmedSignatureInfo[];
   address: string;
+  hasMore: boolean;
+  nextBefore?: string;
 }
 
 export interface ErrorResponse {

@@ -11,6 +11,8 @@ export interface BalanceResponse {
 export interface TransactionResponse {
   transactions: any[];
   address: string;
+  hasMore: boolean;
+  nextBefore?: string;
 }
 
 export interface ErrorResponse {
