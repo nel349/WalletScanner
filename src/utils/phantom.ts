@@ -7,6 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
 
+// see example here: https://ritikchhipa5.medium.com/connecting-solana-network-on-react-native-with-phantom-wallet-5af46095fe61
+
 // Storage keys
 const WALLET_STORAGE_KEY = 'PHANTOM_WALLET_ADDRESS';
 const SESSION_KEY = 'PHANTOM_SESSION';
