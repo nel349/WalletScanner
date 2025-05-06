@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, Dimensions, ActivityIndicator, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { getHistoricalBalance } from '../utils/solana';
 import { HistoricalBalanceResponse } from '../types';
@@ -10,11 +10,37 @@ interface BalanceChartProps {
 
 type TimeWindow = '24h' | '1w' | '1m' | '1y' | 'all';
 
+interface TooltipData {
+  x: number;
+  y: number;
+  value: number;
+  index: number;
+  timestamp: number;
+  visible: boolean;
+}
+
+interface DataPointClickEvent {
+  index: number;
+  value: number;
+  dataset: any;
+  x: number;
+  y: number;
+}
+
 const BalanceChart: React.FC<BalanceChartProps> = ({ walletAddress }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [balanceData, setBalanceData] = useState<HistoricalBalanceResponse | null>(null);
   const [selectedTimeWindow, setSelectedTimeWindow] = useState<TimeWindow>('1m');
+  const [tooltipData, setTooltipData] = useState<TooltipData>({
+    x: 0,
+    y: 0,
+    value: 0,
+    index: 0,
+    timestamp: 0,
+    visible: false
+  });
+  const [filteredPoints, setFilteredPoints] = useState<{ timestamp: number; balance: number }[]>([]);
 
   const fetchBalanceHistory = async () => {
     if (!walletAddress) return;
@@ -37,38 +63,15 @@ const BalanceChart: React.FC<BalanceChartProps> = ({ walletAddress }) => {
     fetchBalanceHistory();
   }, [walletAddress, selectedTimeWindow]);
 
-  const formatDate = (timestamp: number): string => {
-    const date = new Date(timestamp);
-    
-    switch(selectedTimeWindow) {
-      case '24h':
-        return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-      case '1w':
-        return date.toLocaleDateString(undefined, { weekday: 'short' });
-      case '1m':
-        return `${(date.getDate()).toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-      case '1y':
-        return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().substring(2)}`;
-      case 'all':
-        // Use a more compact format: MM/YY
-        return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().substring(2)}`;
-      default:
-        return date.toLocaleDateString();
-    }
-  };
-
-  const getChartData = () => {
+  // Process data points and update filteredPoints whenever balanceData changes
+  useEffect(() => {
     if (!balanceData || balanceData.dataPoints.length === 0) {
-      return {
-        labels: [],
-        datasets: [{ data: [0] }]
-      };
+      setFilteredPoints([]);
+      return;
     }
 
-    // For the chart we need to ensure we don't have too many data points
-    // Let's limit it to a reasonable number based on the time window
     const dataPoints = balanceData.dataPoints;
-    let filteredPoints = dataPoints;
+    let newFilteredPoints = dataPoints;
     
     // If we have too many points, sample them
     let maxPoints = 6; // Default number of points
@@ -93,21 +96,65 @@ const BalanceChart: React.FC<BalanceChartProps> = ({ walletAddress }) => {
     
     if (dataPoints.length > maxPoints) {
       const step = Math.floor(dataPoints.length / maxPoints);
-      filteredPoints = dataPoints.filter((_, index) => index % step === 0);
+      newFilteredPoints = dataPoints.filter((_, index) => index % step === 0);
       
       // Always include the latest point
-      if (filteredPoints.length > 0 && 
-          filteredPoints[filteredPoints.length - 1] !== dataPoints[dataPoints.length - 1]) {
-        filteredPoints.push(dataPoints[dataPoints.length - 1]);
+      if (newFilteredPoints.length > 0 && 
+          newFilteredPoints[newFilteredPoints.length - 1] !== dataPoints[dataPoints.length - 1]) {
+        newFilteredPoints.push(dataPoints[dataPoints.length - 1]);
       }
       
       // Always include the first point
-      if (filteredPoints.length > 0 && filteredPoints[0] !== dataPoints[0]) {
-        filteredPoints.unshift(dataPoints[0]);
+      if (newFilteredPoints.length > 0 && newFilteredPoints[0] !== dataPoints[0]) {
+        newFilteredPoints.unshift(dataPoints[0]);
       }
       
       // Sort points by timestamp to ensure correct order
-      filteredPoints.sort((a, b) => a.timestamp - b.timestamp);
+      newFilteredPoints.sort((a, b) => a.timestamp - b.timestamp);
+    }
+
+    setFilteredPoints(newFilteredPoints);
+  }, [balanceData, selectedTimeWindow]);
+
+  const formatDate = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    
+    switch(selectedTimeWindow) {
+      case '24h':
+        return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+      case '1w':
+        return date.toLocaleDateString(undefined, { weekday: 'short' });
+      case '1m':
+        return `${(date.getDate()).toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      case '1y':
+        return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().substring(2)}`;
+      case 'all':
+        // Use a more compact format: MM/YY
+        return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().substring(2)}`;
+      default:
+        return date.toLocaleDateString();
+    }
+  };
+
+  // Return a more detailed formatted date string for the tooltip
+  const formatDetailedDate = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString(undefined, { 
+      weekday: 'short', 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getChartData = () => {
+    if (!filteredPoints || filteredPoints.length === 0) {
+      return {
+        labels: [],
+        datasets: [{ data: [0] }]
+      };
     }
 
     return {
@@ -165,88 +212,161 @@ const BalanceChart: React.FC<BalanceChartProps> = ({ walletAddress }) => {
     }
   };
 
+  const handleDataPointClick = ({ index, value, dataset, x, y }: DataPointClickEvent) => {
+    // If we click the same point, toggle tooltip visibility
+    if (tooltipData.index === index && tooltipData.visible) {
+      setTooltipData(prev => ({ ...prev, visible: false }));
+      return;
+    }
+    
+    // Set the tooltip data and make it visible
+    setTooltipData({
+      x,
+      y,
+      value,
+      index,
+      timestamp: filteredPoints[index]?.timestamp || 0,
+      visible: true
+    });
+  };
+
+  // Hide the tooltip when tapping outside chart
+  const handleChartAreaPress = () => {
+    if (tooltipData.visible) {
+      setTooltipData(prev => ({ ...prev, visible: false }));
+    }
+  };
+
+  const WIDTH = Dimensions.get('window').width - 40;
+  const HEIGHT = 220;
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>SOL Balance History</Text>
-      
-      <View style={styles.timeWindowSelector}>
-        <TouchableOpacity
-          style={[styles.timeWindowButton, selectedTimeWindow === '24h' && styles.selectedTimeWindow]}
-          onPress={() => setSelectedTimeWindow('24h')}
-        >
-          <Text style={styles.timeWindowText}>24h</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.timeWindowButton, selectedTimeWindow === '1w' && styles.selectedTimeWindow]}
-          onPress={() => setSelectedTimeWindow('1w')}
-        >
-          <Text style={styles.timeWindowText}>1w</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.timeWindowButton, selectedTimeWindow === '1m' && styles.selectedTimeWindow]}
-          onPress={() => setSelectedTimeWindow('1m')}
-        >
-          <Text style={styles.timeWindowText}>1m</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.timeWindowButton, selectedTimeWindow === '1y' && styles.selectedTimeWindow]}
-          onPress={() => setSelectedTimeWindow('1y')}
-        >
-          <Text style={styles.timeWindowText}>1y</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.timeWindowButton, selectedTimeWindow === 'all' && styles.selectedTimeWindow]}
-          onPress={() => setSelectedTimeWindow('all')}
-        >
-          <Text style={styles.timeWindowText}>All</Text>
-        </TouchableOpacity>
+    <TouchableWithoutFeedback onPress={handleChartAreaPress}>
+      <View style={styles.container}>
+        <Text style={styles.title}>SOL Balance History</Text>
+        
+        <View style={styles.timeWindowSelector}>
+          <TouchableOpacity
+            style={[styles.timeWindowButton, selectedTimeWindow === '24h' && styles.selectedTimeWindow]}
+            onPress={() => setSelectedTimeWindow('24h')}
+          >
+            <Text style={styles.timeWindowText}>24h</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.timeWindowButton, selectedTimeWindow === '1w' && styles.selectedTimeWindow]}
+            onPress={() => setSelectedTimeWindow('1w')}
+          >
+            <Text style={styles.timeWindowText}>1w</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.timeWindowButton, selectedTimeWindow === '1m' && styles.selectedTimeWindow]}
+            onPress={() => setSelectedTimeWindow('1m')}
+          >
+            <Text style={styles.timeWindowText}>1m</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.timeWindowButton, selectedTimeWindow === '1y' && styles.selectedTimeWindow]}
+            onPress={() => setSelectedTimeWindow('1y')}
+          >
+            <Text style={styles.timeWindowText}>1y</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.timeWindowButton, selectedTimeWindow === 'all' && styles.selectedTimeWindow]}
+            onPress={() => setSelectedTimeWindow('all')}
+          >
+            <Text style={styles.timeWindowText}>All</Text>
+          </TouchableOpacity>
+        </View>
+        
+        {!isLoading && balanceData && balanceData.dataPoints.length > 0 && (
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Min</Text>
+              <Text style={styles.statValue}>{balanceStats.min.toFixed(4)} SOL</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Current</Text>
+              <Text style={[styles.statValue, styles.currentValue]}>{balanceStats.current.toFixed(4)} SOL</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Max</Text>
+              <Text style={styles.statValue}>{balanceStats.max.toFixed(4)} SOL</Text>
+            </View>
+          </View>
+        )}
+        
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#8641F4" />
+          </View>
+        ) : error ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : balanceData && balanceData.dataPoints.length > 0 ? (
+          <View style={styles.chartContainer}>
+            <LineChart
+              data={getChartData()}
+              width={WIDTH}
+              height={HEIGHT}
+              chartConfig={chartConfig}
+              bezier
+              style={styles.chart}
+              fromZero={true}
+              withVerticalLines={false}
+              withHorizontalLabels={true}
+              withVerticalLabels={true}
+              withDots={true}
+              horizontalLabelRotation={-30} // Rotate x-axis labels
+              verticalLabelRotation={0}
+              onDataPointClick={handleDataPointClick}
+              decorator={() => {
+                return tooltipData.visible ? (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: tooltipData.x - 80, // Center the tooltip
+                      top: tooltipData.y - 90,  // Position tooltip above the point
+                    }}
+                  >
+                    <View style={styles.tooltip}>
+                      <Text style={styles.tooltipTitle}>
+                        {formatDetailedDate(tooltipData.timestamp)}
+                      </Text>
+                      <View style={styles.tooltipRow}>
+                        <Text style={styles.tooltipLabel}>Balance:</Text>
+                        <Text style={styles.tooltipValue}>{tooltipData.value.toFixed(4)} SOL</Text>
+                      </View>
+                      {tooltipData.index > 0 && filteredPoints.length > tooltipData.index - 1 && (
+                        <View style={styles.tooltipRow}>
+                          <Text style={styles.tooltipLabel}>Change:</Text>
+                          <Text 
+                            style={[
+                              styles.tooltipValue, 
+                              {
+                                color: tooltipData.value > filteredPoints[tooltipData.index - 1].balance 
+                                  ? '#4CAF50' // green for positive
+                                  : tooltipData.value < filteredPoints[tooltipData.index - 1].balance 
+                                    ? '#FF5252' // red for negative
+                                    : '#FFFFFF' // white for no change
+                              }
+                            ]}
+                          >
+                            {(tooltipData.value - filteredPoints[tooltipData.index - 1].balance).toFixed(4)} SOL
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                ) : null;
+              }}
+            />
+            {/* Instructions for user */}
+            <Text style={styles.tapInstructions}>Tap on data points for details</Text>
+          </View>
+        ) : (
+          <Text style={styles.noDataText}>No balance history data available</Text>
+        )}
       </View>
-      
-      {!isLoading && balanceData && balanceData.dataPoints.length > 0 && (
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Min</Text>
-            <Text style={styles.statValue}>{balanceStats.min.toFixed(4)} SOL</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Current</Text>
-            <Text style={[styles.statValue, styles.currentValue]}>{balanceStats.current.toFixed(4)} SOL</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Max</Text>
-            <Text style={styles.statValue}>{balanceStats.max.toFixed(4)} SOL</Text>
-          </View>
-        </View>
-      )}
-      
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8641F4" />
-        </View>
-      ) : error ? (
-        <Text style={styles.errorText}>{error}</Text>
-      ) : balanceData && balanceData.dataPoints.length > 0 ? (
-        <View style={styles.chartContainer}>
-          <LineChart
-            data={getChartData()}
-            width={Dimensions.get('window').width - 40}
-            height={220}
-            chartConfig={chartConfig}
-            bezier
-            style={styles.chart}
-            fromZero={true}
-            withVerticalLines={false}
-            withHorizontalLabels={true}
-            withVerticalLabels={true}
-            withDots={true}
-            horizontalLabelRotation={-30} // Rotate x-axis labels
-            verticalLabelRotation={0}
-          />
-        </View>
-      ) : (
-        <Text style={styles.noDataText}>No balance history data available</Text>
-      )}
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -329,6 +449,49 @@ const styles = StyleSheet.create({
   currentValue: {
     color: '#4CAF50',
   },
+  tooltip: {
+    backgroundColor: 'rgba(40, 40, 40, 0.95)',
+    borderRadius: 8,
+    padding: 10,
+    width: 160,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#8641F4',
+  },
+  tooltipTitle: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    marginBottom: 5,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  tooltipRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 2,
+  },
+  tooltipLabel: {
+    color: '#AAAAAA',
+    fontSize: 12,
+  },
+  tooltipValue: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  tapInstructions: {
+    color: '#AAAAAA',
+    fontSize: 11,
+    marginTop: 8,
+    fontStyle: 'italic',
+  }
 });
 
 export default BalanceChart;
