@@ -1,6 +1,6 @@
 import 'react-native-get-random-values';
 import { Connection, PublicKey, ParsedTransactionWithMeta } from '@solana/web3.js';
-import { WalletResponse, BalanceResponse, TransactionResponse } from '../types';
+import { WalletResponse, BalanceResponse, TransactionResponse, ParsedTransactionDetails } from '../types';
 
 // Use the public RPC endpoint
 const SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -46,15 +46,20 @@ export const getWalletTransactions = async (
   walletAddress: string,
   options: { 
     limit?: number,
-    before?: string 
+    before?: string,
+    includeParsedDetails?: boolean
   } = {}
 ): Promise<TransactionResponse> => {
   try {
-    const { limit = 20, before } = options;
+    const { limit = 20, before, includeParsedDetails = true } = options;
     let url = `${API_BASE_URL}/wallet/transactions/${walletAddress}?limit=${limit}`;
     
     if (before) {
       url += `&before=${before}`;
+    }
+    
+    if (includeParsedDetails === false) {
+      url += '&includeParsedDetails=false';
     }
     
     const response = await fetch(url, {
@@ -66,6 +71,21 @@ export const getWalletTransactions = async (
     return handleApiError(response);
   } catch (error) {
     console.error('Error fetching transactions:', error);
+    throw error;
+  }
+};
+
+export const getTransactionDetails = async (signature: string): Promise<ParsedTransactionDetails> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/wallet/transaction/${signature}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return handleApiError(response);
+  } catch (error) {
+    console.error('Error fetching transaction details:', error);
     throw error;
   }
 };

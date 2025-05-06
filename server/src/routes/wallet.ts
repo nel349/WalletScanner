@@ -29,11 +29,30 @@ router.get('/transactions/:address', async (req, res) => {
     const { address } = req.params;
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
     const before = req.query.before as string | undefined;
+    const includeParsedDetails = req.query.includeParsedDetails !== 'false'; // default to true
     
-    const result = await solanaService.getTransactions(address, { limit, before });
+    const result = await solanaService.getTransactions(address, { 
+      limit, 
+      before,
+      includeParsedDetails
+    });
     res.json(result);
   } catch (error) {
     res.status(400).json(error);
+  }
+});
+
+router.get('/transaction/:signature', async (req, res) => {
+  try {
+    const { signature } = req.params;
+    const result = await solanaService.parseTransaction(signature);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ 
+      error: 'TRANSACTION_PARSE_ERROR', 
+      message: 'Failed to parse transaction',
+      details: error.message 
+    });
   }
 });
 
