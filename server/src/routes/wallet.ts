@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { SolanaService } from '../services/solana';
+import { HeliusService } from '../services/helius';
 
 const router = Router();
-const solanaService = new SolanaService();
+const heliusService = new HeliusService();
 
 router.get('/validate/:address', async (req, res) => {
   try {
     const { address } = req.params;
-    const result = await solanaService.validateWallet(address);
+    const result = await heliusService.validateWallet(address);
     res.json(result);
   } catch (error) {
     res.status(400).json(error);
@@ -17,7 +17,7 @@ router.get('/validate/:address', async (req, res) => {
 router.get('/balance/:address', async (req, res) => {
   try {
     const { address } = req.params;
-    const result = await solanaService.getBalance(address);
+    const result = await heliusService.getBalance(address);
     res.json(result);
   } catch (error) {
     res.status(400).json(error);
@@ -31,7 +31,7 @@ router.get('/transactions/:address', async (req, res) => {
     const before = req.query.before as string | undefined;
     const includeParsedDetails = req.query.includeParsedDetails !== 'false'; // default to true
     
-    const result = await solanaService.getTransactions(address, { 
+    const result = await heliusService.getTransactions(address, { 
       limit, 
       before,
       includeParsedDetails
@@ -42,18 +42,5 @@ router.get('/transactions/:address', async (req, res) => {
   }
 });
 
-router.get('/transaction/:signature', async (req, res) => {
-  try {
-    const { signature } = req.params;
-    const result = await solanaService.parseTransaction(signature);
-    res.json(result);
-  } catch (error: any) {
-    res.status(400).json({ 
-      error: 'TRANSACTION_PARSE_ERROR', 
-      message: 'Failed to parse transaction',
-      details: error.message 
-    });
-  }
-});
 
 export default router; 

@@ -7,9 +7,7 @@
     "jsx": "react-native",
     "module": "esnext",
     "target": "esnext",
-    "lib": [
-      "esnext"
-    ],
+    "lib": ["esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "noEmit": true,

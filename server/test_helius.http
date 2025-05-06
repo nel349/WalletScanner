@@ -1,0 +1,30 @@
+# helius service tests
+@localUrl = http://localhost:3000
+@prodUrl = https://api.helius.xyz
+@address = AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
+@signature = 3HQWFqZZLEXKZTxYfUWyjwBRRaw92tQKJz79ETVHdAxEDCf34zeG9gBuQiAGP85mNwykvtbukqAnCduGEaRqdqko
+### Get Balance (local)
+GET {{localUrl}}/api/wallet/balance/{{address}}
+Content-Type: application/json
+
+### Validate Wallet (local)
+GET {{localUrl}}/api/wallet/validate/{{address}}
+Content-Type: application/json
+
+### Get Transactions (local)
+GET {{localUrl}}/api/wallet/transactions/{{address}}
+Content-Type: application/json
+
+### Get Transaction Details (local)
+GET {{localUrl}}/api/wallet/transaction/{{signature}}
+Content-Type: application/json
+
+
+
+
+
+
+
+
+
+

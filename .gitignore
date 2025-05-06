@@ -38,3 +38,4 @@ yarn-error.*
 # pre-build files
 android/
 ios/
+server/.env

@@ -1,3 +1,7 @@
+// Load environment variables at the very beginning
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import { Connection, PublicKey } from '@solana/web3.js';

@@ -47,6 +47,53 @@ export interface ParsedInstruction {
   raw?: any;
 }
 
+// Helius API Types
+export interface HeliusTransaction {
+  description: string;
+  type: string;
+  source: string;
+  fee: number;
+  feePayer: string;
+  signature: string;
+  slot: number;
+  timestamp: number;
+  tokenTransfers: HeliusTokenTransfer[];
+  nativeTransfers: HeliusNativeTransfer[];
+  accountData: HeliusAccountData[];
+  transactionError: any;
+  instructions: HeliusInstruction[];
+  events: Record<string, any>;
+}
+
+export interface HeliusTokenTransfer {
+  fromUserAccount: string;
+  toUserAccount: string;
+  fromTokenAccount: string;
+  toTokenAccount: string;
+  tokenAmount: number;
+  mint: string;
+  tokenStandard: string;
+}
+
+export interface HeliusNativeTransfer {
+  fromUserAccount: string;
+  toUserAccount: string;
+  amount: number;
+}
+
+export interface HeliusAccountData {
+  account: string;
+  nativeBalanceChange: number;
+  tokenBalanceChanges: any[];
+}
+
+export interface HeliusInstruction {
+  accounts: string[];
+  data: string;
+  programId: string;
+  innerInstructions: any[];
+}
+
 export interface ErrorResponse {
   error: string;
   message: string;
