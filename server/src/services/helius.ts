@@ -47,39 +47,34 @@ export class HeliusService {
 
   async getBalance(address: string): Promise<BalanceResponse> {
     try {
-      // Helius doesn't have a direct balance endpoint, so we fetch recent transactions 
-      // and extract the balance from the account data
-      const url = `${this.baseUrl}/v0/addresses/${address}/transactions`;
-      const response = await axios.get(url, {
-        params: {
-          'api-key': this.apiKey,
-          limit: 1
-        }
+      // Use direct connection to get the balance instead of Helius
+      // This will be more accurate than trying to derive it from transaction data
+      const url = `https://api.mainnet-beta.solana.com`;
+      const response = await axios.post(url, {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'getBalance',
+        params: [address]
       });
 
-      if (response.data && response.data.length > 0) {
-        // Find the account data for the requested address
-        const transaction = response.data[0];
-        const accountData = transaction.accountData.find(
-          (account: any) => account.account === address
-        );
-
-        if (accountData) {
-          // Balance is in lamports, convert to SOL
-          return {
-            balance: accountData.nativeBalanceChange / 1e9,
-            address: address
-          };
-        }
+      if (response.data && response.data.result) {
+        // Convert from lamports to SOL (1 SOL = 1,000,000,000 lamports)
+        const balanceInLamports = response.data.result.value;
+        const balanceInSol = balanceInLamports / 1_000_000_000;
+        
+        return {
+          balance: balanceInSol,
+          address: address
+        };
       }
 
-      // If we can't get the balance from transactions, return 0
+      // If we can't get the balance, return 0
       return {
         balance: 0,
         address: address
       };
     } catch (error) {
-      console.error('Failed to fetch balance from Helius:', error);
+      console.error('Failed to fetch balance:', error);
       throw {
         error: 'BALANCE_ERROR',
         message: 'Failed to fetch balance'
@@ -119,36 +114,60 @@ export class HeliusService {
           startTimestamp = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).getTime();
       }
       
-      // Fetch transactions since startTimestamp
-      // Helius doesn't have a native historical balance API, so we need to build it
-      // from transaction history
-      const url = `${this.baseUrl}/v0/addresses/${address}/transactions`;
-      const response = await axios.get(url, {
-        params: {
+      // Fetch all transactions since startTimestamp using pagination
+      const transactions: any[] = [];
+      let hasMoreTransactions = true;
+      let beforeSignature: string | undefined = undefined;
+      const limit = 100; // Maximum limit allowed by Helius API
+      let oldestTimestamp = now.getTime();
+      
+      // Fetch transactions in batches until we've reached the start timestamp
+      while (hasMoreTransactions && oldestTimestamp >= startTimestamp) {
+        // Prepare URL and parameters for Helius API
+        const url = `${this.baseUrl}/v0/addresses/${address}/transactions`;
+        const params: any = {
           'api-key': this.apiKey,
-          // Set a large limit to get as many transactions as possible
-          // For 'all' time window, try to get more transactions
-          limit: timeWindow === 'all' ? 200 : 100
+          limit
+        };
+        
+        if (beforeSignature) {
+          params.before = beforeSignature;
         }
-      });
-
-      if (!response.data) {
-        throw new Error('No data returned from Helius API');
+        
+        // Make the request to Helius API
+        const response = await axios.get(url, { params });
+        
+        if (!response.data || !response.data.length) {
+          hasMoreTransactions = false;
+          break;
+        }
+        
+        // Get the oldest transaction in this batch
+        const batch = response.data;
+        const oldestTx = batch[batch.length - 1];
+        oldestTimestamp = oldestTx.timestamp * 1000;
+        
+        // Set the before parameter for the next request
+        beforeSignature = oldestTx.signature;
+        
+        // Add transactions that are after our startTimestamp
+        const validTransactions = batch.filter((tx: any) => tx.timestamp * 1000 >= startTimestamp);
+        transactions.push(...validTransactions);
+        
+        // If we got fewer transactions than the limit or the oldest transaction is already
+        // before our start timestamp, we've reached the end
+        if (batch.length < limit || oldestTimestamp < startTimestamp) {
+          hasMoreTransactions = false;
+        }
+        
+        // Add a small delay to avoid hitting rate limits
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
-      // Filter transactions that are after our startTimestamp
-      const transactions = response.data.filter((tx: any) => {
-        return tx.timestamp * 1000 >= startTimestamp;
-      });
-
-      // To calculate balance at each transaction point, we need the latest balance
-      // and work backwards through the transactions
-      let currentBalance = 0;
-      
-      // Get current balance first
+      // Get current balance using direct RPC call
       const balanceResponse = await this.getBalance(address);
-      currentBalance = balanceResponse.balance;
-      
+      let currentBalance = balanceResponse.balance;
+
       // Create data points array with current balance as first point
       const dataPoints = [
         {
@@ -162,24 +181,34 @@ export class HeliusService {
       
       // Work backwards through transactions
       for (const tx of transactions) {
-        // Find the balance change for this address in the transaction
-        const accountData = tx.accountData.find(
-          (account: any) => account.account === address
-        );
-        
-        if (accountData) {
-          // Subtract the balance change to get the balance before this transaction
-          // (note: balance change could be positive or negative, so we're subtracting it)
-          // Convert from lamports to SOL
-          const balanceChange = accountData.nativeBalanceChange / 1e9;
-          currentBalance -= balanceChange;
-          
-          // Add this as a data point
-          dataPoints.push({
-            timestamp: tx.timestamp * 1000, // Convert to milliseconds
-            balance: currentBalance
-          });
+        // We need to account for both native transfers and token transfers
+        let balanceChange = 0;
+
+        // Check for native SOL transfers
+        for (const transfer of tx.nativeTransfers || []) {
+          if (transfer.fromUserAccount === address) {
+            // Outgoing transfer (sent SOL)
+            balanceChange -= transfer.amount / 1_000_000_000; // Convert lamports to SOL
+          } else if (transfer.toUserAccount === address) {
+            // Incoming transfer (received SOL)
+            balanceChange += transfer.amount / 1_000_000_000; // Convert lamports to SOL
+          }
         }
+
+        // Also account for fees if this address paid them
+        if (tx.feePayer === address) {
+          balanceChange -= tx.fee / 1_000_000_000; // Convert lamports to SOL
+        }
+
+        // Compute previous balance by subtracting the balance change
+        currentBalance -= balanceChange;
+        currentBalance = Math.max(0, currentBalance); // Ensure we never go below 0
+        
+        // Add this as a data point
+        dataPoints.push({
+          timestamp: tx.timestamp * 1000, // Convert to milliseconds
+          balance: currentBalance
+        });
       }
       
       // Reverse to get chronological order (oldest to newest)

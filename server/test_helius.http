@@ -15,8 +15,8 @@ Content-Type: application/json
 GET {{localUrl}}/api/wallet/transactions/{{address}}
 Content-Type: application/json
 
-### Get Transaction Details (local)
-GET {{localUrl}}/api/wallet/transaction/{{signature}}
+### Get Historical Balance (local)
+GET {{localUrl}}/api/wallet/historical-balance/{{address}}
 Content-Type: application/json
 
 
