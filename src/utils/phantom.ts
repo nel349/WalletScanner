@@ -270,7 +270,7 @@ export const usePhantomWallet = () => {
         console.log('Development mode detected - using simulated Phantom connection');
         // In development mode, we'll simulate a successful connection
         // Store a test address for development
-        const testWalletAddress = 'DJtb39rheU34w3t37M21vuPfxvjzquMpWShcUPj17WjY';
+        const testWalletAddress = 'G19yP5LGpKwVipr2VLcg25e1iSJTJwtxeuaHvsRoxJn6';
         await AsyncStorage.setItem(WALLET_STORAGE_KEY, testWalletAddress);
         setIsConnected(true);
         setWalletAddress(testWalletAddress);
