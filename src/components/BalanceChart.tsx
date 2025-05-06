@@ -91,12 +91,44 @@ const BalanceChart: React.FC<BalanceChartProps> = ({ walletAddress }) => {
     };
   };
 
+  // Find min, max, and current balance for display
+  const getBalanceStats = () => {
+    if (!balanceData || balanceData.dataPoints.length === 0) {
+      return { min: 0, max: 0, current: 0 };
+    }
+    
+    const balances = balanceData.dataPoints.map(p => p.balance);
+    return {
+      min: Math.min(...balances),
+      max: Math.max(...balances),
+      current: balanceData.dataPoints[balanceData.dataPoints.length - 1].balance
+    };
+  };
+
+  const balanceStats = getBalanceStats();
+
   const chartConfig = {
     backgroundGradientFrom: '#1E2923',
     backgroundGradientTo: '#08130D',
     color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
     strokeWidth: 2,
-    decimalPlaces: 2,
+    decimalPlaces: 1,
+    yAxisMin: 0, // Ensure y-axis always starts from 0
+    yAxisSuffix: ' SOL',
+    propsForDots: {
+      r: '6',
+      strokeWidth: '2',
+      stroke: '#ffa726'
+    },
+    propsForLabels: {
+      fontSize: 10
+    },
+    formatYLabel: (value: string) => {
+      // Format large numbers more concisely
+      const num = parseFloat(value);
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+      return value;
+    },
     style: {
       borderRadius: 16
     }
@@ -139,6 +171,23 @@ const BalanceChart: React.FC<BalanceChartProps> = ({ walletAddress }) => {
         </TouchableOpacity>
       </View>
       
+      {!isLoading && balanceData && balanceData.dataPoints.length > 0 && (
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Min</Text>
+            <Text style={styles.statValue}>{balanceStats.min.toFixed(4)} SOL</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Current</Text>
+            <Text style={[styles.statValue, styles.currentValue]}>{balanceStats.current.toFixed(4)} SOL</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Max</Text>
+            <Text style={styles.statValue}>{balanceStats.max.toFixed(4)} SOL</Text>
+          </View>
+        </View>
+      )}
+      
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#8641F4" />
@@ -153,6 +202,10 @@ const BalanceChart: React.FC<BalanceChartProps> = ({ walletAddress }) => {
           chartConfig={chartConfig}
           bezier
           style={styles.chart}
+          fromZero={true}
+          withVerticalLines={false}
+          withHorizontalLabels={true}
+          withVerticalLabels={true}
         />
       ) : (
         <Text style={styles.noDataText}>No balance history data available</Text>
@@ -210,6 +263,30 @@ const styles = StyleSheet.create({
   chart: {
     marginVertical: 8,
     borderRadius: 16,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    backgroundColor: '#2A2A2A',
+    borderRadius: 8,
+    padding: 10,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statLabel: {
+    color: '#AAAAAA',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  statValue: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  currentValue: {
+    color: '#4CAF50',
   },
 });
 
