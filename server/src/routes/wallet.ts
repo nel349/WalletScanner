@@ -24,6 +24,17 @@ router.get('/balance/:address', async (req, res) => {
   }
 });
 
+router.get('/historical-balance/:address', async (req, res) => {
+  try {
+    const { address } = req.params;
+    const timeWindow = req.query.timeWindow as string || '1m'; // Default to 1 month
+    const result = await heliusService.getHistoricalBalance(address, timeWindow);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json(error);
+  }
+});
+
 router.get('/transactions/:address', async (req, res) => {
   try {
     const { address } = req.params;

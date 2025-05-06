@@ -5,6 +5,7 @@ import { validateWalletAddress, getWalletBalance, getWalletTransactions } from '
 import { usePhantomWallet, getPhantomWalletBalance } from '../utils/phantom';
 import { ConfirmedSignatureInfo } from '@solana/web3.js';
 import TransactionList from '../components/TransactionList';
+import BalanceChart from '../components/BalanceChart';
 
 const WalletScanner = () => {
   const [walletAddress, setWalletAddress] = useState('');
@@ -220,6 +221,10 @@ const WalletScanner = () => {
             <Text style={styles.resultTitle}>Wallet Balance</Text>
             <Text style={styles.balanceText}>{balance.toFixed(4)} SOL</Text>
           </View>
+        )}
+
+        {balance !== null && walletAddress && (
+          <BalanceChart walletAddress={walletAddress} />
         )}
 
         {transactions.length > 0 && (

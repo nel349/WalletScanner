@@ -2,6 +2,15 @@ import axios from 'axios';
 import { PublicKey } from '@solana/web3.js';
 import { WalletResponse, BalanceResponse, TransactionResponse, ErrorResponse, HeliusTransaction } from '../types';
 
+// Interface for historical balance response
+interface HistoricalBalanceResponse {
+  address: string;
+  dataPoints: {
+    timestamp: number;
+    balance: number;
+  }[];
+}
+
 export class HeliusService {
   private baseUrl: string;
   private apiKey: string;
@@ -74,6 +83,117 @@ export class HeliusService {
       throw {
         error: 'BALANCE_ERROR',
         message: 'Failed to fetch balance'
+      } as ErrorResponse;
+    }
+  }
+
+  async getHistoricalBalance(address: string, timeWindow: string): Promise<HistoricalBalanceResponse> {
+    try {
+      // Calculate start timestamp based on timeWindow
+      const now = new Date();
+      let startTimestamp: number;
+      
+      switch(timeWindow) {
+        case '24h':
+          // 24 hours ago
+          startTimestamp = new Date(now.getTime() - 24 * 60 * 60 * 1000).getTime();
+          break;
+        case '1w':
+          // 1 week ago
+          startTimestamp = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).getTime();
+          break;
+        case '1m':
+          // 1 month ago (approx 30 days)
+          startTimestamp = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).getTime();
+          break;
+        case '1y':
+          // 1 year ago
+          startTimestamp = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).getTime();
+          break;
+        case 'all':
+          // For 'all', set to earliest possible date (just set to a very old date)
+          startTimestamp = new Date(2020, 0, 1).getTime(); // Solana mainnet launched in 2020
+          break;
+        default:
+          // Default to 1 month
+          startTimestamp = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).getTime();
+      }
+      
+      // Fetch transactions since startTimestamp
+      // Helius doesn't have a native historical balance API, so we need to build it
+      // from transaction history
+      const url = `${this.baseUrl}/v0/addresses/${address}/transactions`;
+      const response = await axios.get(url, {
+        params: {
+          'api-key': this.apiKey,
+          // Set a large limit to get as many transactions as possible
+          // For 'all' time window, try to get more transactions
+          limit: timeWindow === 'all' ? 200 : 100
+        }
+      });
+
+      if (!response.data) {
+        throw new Error('No data returned from Helius API');
+      }
+
+      // Filter transactions that are after our startTimestamp
+      const transactions = response.data.filter((tx: any) => {
+        return tx.timestamp * 1000 >= startTimestamp;
+      });
+
+      // To calculate balance at each transaction point, we need the latest balance
+      // and work backwards through the transactions
+      let currentBalance = 0;
+      
+      // Get current balance first
+      const balanceResponse = await this.getBalance(address);
+      currentBalance = balanceResponse.balance;
+      
+      // Create data points array with current balance as first point
+      const dataPoints = [
+        {
+          timestamp: now.getTime(),
+          balance: currentBalance
+        }
+      ];
+      
+      // Sort transactions newest to oldest
+      transactions.sort((a: any, b: any) => b.timestamp - a.timestamp);
+      
+      // Work backwards through transactions
+      for (const tx of transactions) {
+        // Find the balance change for this address in the transaction
+        const accountData = tx.accountData.find(
+          (account: any) => account.account === address
+        );
+        
+        if (accountData) {
+          // Subtract the balance change to get the balance before this transaction
+          // (note: balance change could be positive or negative, so we're subtracting it)
+          // Convert from lamports to SOL
+          const balanceChange = accountData.nativeBalanceChange / 1e9;
+          currentBalance -= balanceChange;
+          
+          // Add this as a data point
+          dataPoints.push({
+            timestamp: tx.timestamp * 1000, // Convert to milliseconds
+            balance: currentBalance
+          });
+        }
+      }
+      
+      // Reverse to get chronological order (oldest to newest)
+      dataPoints.reverse();
+      
+      return {
+        address,
+        dataPoints
+      };
+    } catch (error) {
+      console.error('Failed to fetch historical balance:', error);
+      throw {
+        error: 'HISTORICAL_BALANCE_ERROR',
+        message: 'Failed to fetch historical balance'
       } as ErrorResponse;
     }
   }

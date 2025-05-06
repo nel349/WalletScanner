@@ -10,6 +10,15 @@ This document provides a comprehensive breakdown of features for the Solana Wall
 
 ## 2. Transaction Data Fetching
 - [ ] Retrieve transaction history from Solana blockchain
+    - ### **For retrieving transaction history:** 
+
+    - [x] - Fetching more than the default 10 transactions
+    - [ ] - Parsing transaction details (type, amount, parties)
+    - [ ] - Organizing transactions by type
+    - [ ] - Handling pagination for large transaction histories
+    - [ ] - Processing transaction data for visualization
+
+
 - [ ] Fetch token balances (SOL and SPL tokens)
 - [ ] Parse transaction types (transfers, swaps, staking)
 - [ ] Calculate historical balances over time

@@ -8,6 +8,14 @@ export interface BalanceResponse {
   address: string;
 }
 
+export interface HistoricalBalanceResponse {
+  address: string;
+  dataPoints: {
+    timestamp: number;
+    balance: number;
+  }[];
+}
+
 export interface TransactionResponse {
   transactions: any[];
   address: string;

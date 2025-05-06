@@ -1,6 +1,6 @@
 import 'react-native-get-random-values';
 import { Connection, PublicKey, ParsedTransactionWithMeta } from '@solana/web3.js';
-import { WalletResponse, BalanceResponse, TransactionResponse, ParsedTransactionDetails } from '../types';
+import { WalletResponse, BalanceResponse, TransactionResponse, ParsedTransactionDetails, HistoricalBalanceResponse } from '../types';
 
 // Use the public RPC endpoint
 const SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -105,4 +105,24 @@ export const getWalletBalance = async (walletAddress: string, limit: number = 3)
     console.error('Error fetching balance:', error);
     throw error;
   }
-}; 
+};
+
+export const getHistoricalBalance = async (
+  walletAddress: string, 
+  timeWindow: '24h' | '1w' | '1m' | '1y' | 'all' = '1m'
+): Promise<HistoricalBalanceResponse> => {
+  try {
+    const url = `${API_BASE_URL}/wallet/historical-balance/${walletAddress}?timeWindow=${timeWindow}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return handleApiError(response);
+  } catch (error) {
+    console.error('Error fetching historical balance:', error);
+    throw error;
+  }
+};

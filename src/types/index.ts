@@ -10,6 +10,14 @@ export interface BalanceResponse {
   address: string;
 }
 
+export interface HistoricalBalanceResponse {
+  address: string;
+  dataPoints: {
+    timestamp: number;
+    balance: number;
+  }[];
+}
+
 export interface TransactionResponse {
   transactions: ConfirmedSignatureInfo[];
   address: string;
