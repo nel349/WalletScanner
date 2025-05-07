@@ -19,6 +19,12 @@ Content-Type: application/json
 GET {{localUrl}}/api/wallet/historical-balance/{{address}}
 Content-Type: application/json
 
+### Get Transactions (local) with limit and before
+GET {{localUrl}}/api/wallet/transactions/{{address}}?limit=2
+Content-Type: application/json
+
+
+
 
 
 

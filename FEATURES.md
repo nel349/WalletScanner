@@ -13,10 +13,10 @@ This document provides a comprehensive breakdown of features for the Solana Wall
     - ### **For retrieving transaction history:** 
 
     - [x] - Fetching more than the default 10 transactions
-    - [ ] - Parsing transaction details (type, amount, parties)
+    - [x] - Parsing transaction details (type, amount, parties)
     - [ ] - Organizing transactions by type
-    - [ ] - Handling pagination for large transaction histories
-    - [ ] - Processing transaction data for visualization
+    - [x] - Handling pagination for large transaction histories
+    - [x] - Processing transaction data for visualization
 
 
 - [ ] Fetch token balances (SOL and SPL tokens)
@@ -24,13 +24,13 @@ This document provides a comprehensive breakdown of features for the Solana Wall
 - [ ] Calculate historical balances over time
 
 ## 3. Interactive Transaction Charts
-- [ ] Line chart showing SOL balance over time
+- [x] Line chart showing SOL balance over time
 - [ ] Transaction volume visualization
 - [ ] Token distribution pie chart
 - [ ] Transaction type breakdown
 
 ## 4. Filtering & Analysis Tools
-- [ ] Date range selectors (7d, 30d, 90d, YTD, All)
+- [] Date range selectors (7d, 30d, 90d, YTD, All)
 - [ ] Transaction type filters (transfers, swaps, staking)
 - [ ] Token type filters
 - [ ] "Streak" detection for notable activity patterns

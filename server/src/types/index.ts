@@ -17,7 +17,7 @@ export interface HistoricalBalanceResponse {
 }
 
 export interface TransactionResponse {
-  transactions: any[];
+  transactions: HeliusTransaction[];
   address: string;
   hasMore: boolean;
   nextBefore?: string;
