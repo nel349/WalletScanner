@@ -22,6 +22,9 @@ interface HistoricalBalanceResponse {
 export class HeliusService {
   private baseUrl: string;
   private apiKey: string;
+  private readonly RATE_LIMIT = 5; // requests per second
+  private readonly RATE_WINDOW = 1000; // 1 second in milliseconds
+  private requestTimestamps: number[] = [];
 
   constructor() {
     this.baseUrl = process.env.HELIUS_API_URL || 'https://api.helius.xyz';
@@ -290,84 +293,85 @@ export class HeliusService {
     }
   }
 
-  // Fetch all transactions from Helius API
-  // by iterating over all pages until there are no more transactions
-  // and then returning the total count of transactions
-  // and the transactions themselves
-  async fetchAllTransactions(
-    address: string
-  ): Promise<TransactionResponse> {
+  private async waitForRateLimit(): Promise<void> {
+    const now = Date.now();
     
+    // Remove timestamps older than 1 second
+    this.requestTimestamps = this.requestTimestamps.filter(
+      timestamp => now - timestamp < this.RATE_WINDOW
+    );
+    
+    // If we've made 10 requests in the last second, wait
+    if (this.requestTimestamps.length >= this.RATE_LIMIT) {
+      const oldestTimestamp = this.requestTimestamps[0];
+      const waitTime = this.RATE_WINDOW - (now - oldestTimestamp);
+      if (waitTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+    
+    // Add current timestamp
+    this.requestTimestamps.push(Date.now());
+  }
+
+  async fetchAllTransactions(address: string): Promise<TransactionResponse> {
     try {
+      const url = `${this.baseUrl}/v0/addresses/${address}/transactions`;
+      const params: any = {
+        'api-key': this.apiKey,
+        limit: 100
+      };
+
+      let transactions: HeliusTransaction[] = [];
+      let lastSignature: string | null = null;
+      let page = 0;
+      
+      while (true) {
+        console.log('Page: ', page);
         
-        // Prepare URL and parameters for Helius API
-        const url = `${this.baseUrl}/v0/addresses/${address}/transactions`;
-        const params: any = {
-          'api-key': this.apiKey,
-          limit: 100
-        };
-  
+        // Wait for rate limit before making the request
+        await this.waitForRateLimit();
         
-        let transactions: HeliusTransaction[] = [];
-        let lastSignature: string | null = null;
-        let page = 0;
-        while (true) {
-            // print the number of page we are on
-            console.log('Page: ', page);
-            if (lastSignature) {
-                params.before = lastSignature;
-            }
-
-            // Make the request to Helius API
-            const response = await axios.get(url, { params });
-            
-            if (!response.data) {
-              throw new Error('No data returned from Helius API');
-            }
-
-            const newTransactions: HeliusTransaction[] = response.data;
-
-            // Process the response
-            const hasMore = newTransactions.length >= 100;
-            lastSignature = newTransactions[newTransactions.length - 1].signature;
-
-            // Add the new transactions to the list
-
-            if ( newTransactions && newTransactions.length > 0) {
-                console.log('newTransactions Count: ', newTransactions.length);
-                transactions.push(...newTransactions);
-            }
-
-            if (!hasMore) {
-                break;
-            }
-
-            page++;
-
-
-            
-            // set a delay so that we don't hit the rate limit
-            // I have a limit of 10 RPC requests per second so we need to slow down
-            await new Promise(resolve => setTimeout(resolve, 300));
-
+        if (lastSignature) {
+          params.before = lastSignature;
         }
 
-        return {
-          count: transactions.length,
-          transactions,
-          address,
-          hasMore: false,
-          nextBefore: undefined
-        };
+        const response = await axios.get(url, { params });
         
+        if (!response.data) {
+          throw new Error('No data returned from Helius API');
+        }
 
-      } catch (error) {
-        console.error('Failed to fetch transactions from Helius:', error);
-        throw {
-          error: 'TRANSACTIONS_ERROR',
-          message: 'Failed to fetch transactions'
-        } as ErrorResponse;
+        const newTransactions: HeliusTransaction[] = response.data;
+        const hasMore = newTransactions.length >= 100;
+        lastSignature = newTransactions[newTransactions.length - 1].signature;
+
+        if (newTransactions && newTransactions.length > 0) {
+          console.log('newTransactions Count: ', newTransactions.length);
+          transactions.push(...newTransactions);
+        }
+
+        if (!hasMore) {
+          break;
+        }
+
+        page++;
       }
+
+      return {
+        count: transactions.length,
+        transactions,
+        address,
+        hasMore: false,
+        nextBefore: undefined
+      };
+    } catch (error) {
+      console.error('Failed to fetch transactions from Helius:', error);
+      throw {
+        error: 'TRANSACTIONS_ERROR',
+        message: 'Failed to fetch transactions'
+      } as ErrorResponse;
+    }
   }
 
   async getTransactionsByType(
