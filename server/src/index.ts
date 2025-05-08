@@ -6,6 +6,7 @@ import express from 'express';
 import cors from 'cors';
 import { Connection, PublicKey } from '@solana/web3.js';
 import walletRoutes from './routes/wallet';
+import solanaRoutes from './routes/solana_routes';
 import { networkInterfaces } from 'os';
 
 const app = express();
@@ -25,6 +26,7 @@ app.get('/', (req, res) => {
 });
 
 // Routes
+app.use('/api/solana', solanaRoutes);
 app.use('/api/wallet', walletRoutes);
 
 // Get local IP address

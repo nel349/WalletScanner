@@ -53,5 +53,34 @@ router.get('/transactions/:address', async (req, res) => {
   }
 });
 
+router.get('/transactions-by-type/:address', async (req, res) => {
+  try {
+    const { address } = req.params;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
+    const before = req.query.before as string | undefined;
+    const fetchAll = req.query.fetchAll === 'true' || req.query.limit === 'all';
+
+    console.log('Fetching all transactions by type:', fetchAll);
+    const result = await heliusService.getTransactionsByType(address, { 
+      limit, 
+      before,
+      fetchAll
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(400).json(error);
+  }
+});
+
+router.get('/transactions-all/:address', async (req, res) => {
+  try {
+    const { address } = req.params;
+    const result = await heliusService.fetchAllTransactions(address);
+
+    res.json(result);
+  } catch (error) {
+    res.status(400).json(error);
+  }
+});
 
 export default router; 

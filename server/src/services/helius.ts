@@ -1,6 +1,14 @@
 import axios from 'axios';
 import { PublicKey } from '@solana/web3.js';
-import { WalletResponse, BalanceResponse, TransactionResponse, ErrorResponse, HeliusTransaction } from '../types';
+import { 
+  WalletResponse, 
+  BalanceResponse, 
+  TransactionResponse, 
+  ErrorResponse, 
+  HeliusTransaction,
+  TransactionsByTypeResponse, 
+  HeliusTransactionResponse
+} from '../types';
 
 // Interface for historical balance response
 interface HistoricalBalanceResponse {
@@ -242,7 +250,6 @@ export class HeliusService {
       };
 
       if (before) {
-        // Helius uses 'before' as a parameter too, but it might be implementation-specific
         params.before = before;
       }
 
@@ -268,6 +275,7 @@ export class HeliusService {
         : undefined;
       
       return {
+        count: paginatedTransactions.length,
         transactions: paginatedTransactions,
         address: address,
         hasMore,
@@ -278,6 +286,126 @@ export class HeliusService {
       throw {
         error: 'TRANSACTIONS_ERROR',
         message: 'Failed to fetch transactions'
+      } as ErrorResponse;
+    }
+  }
+
+  // Fetch all transactions from Helius API
+  // by iterating over all pages until there are no more transactions
+  // and then returning the total count of transactions
+  // and the transactions themselves
+  async fetchAllTransactions(
+    address: string
+  ): Promise<TransactionResponse> {
+    
+    try {
+        
+        // Prepare URL and parameters for Helius API
+        const url = `${this.baseUrl}/v0/addresses/${address}/transactions`;
+        const params: any = {
+          'api-key': this.apiKey,
+          limit: 100
+        };
+  
+        
+        let transactions: HeliusTransaction[] = [];
+        let lastSignature: string | null = null;
+        let page = 0;
+        while (true) {
+            // print the number of page we are on
+            console.log('Page: ', page);
+            if (lastSignature) {
+                params.before = lastSignature;
+            }
+
+            // Make the request to Helius API
+            const response = await axios.get(url, { params });
+            
+            if (!response.data) {
+              throw new Error('No data returned from Helius API');
+            }
+
+            const newTransactions: HeliusTransaction[] = response.data;
+
+            // Process the response
+            const hasMore = newTransactions.length >= 100;
+            lastSignature = newTransactions[newTransactions.length - 1].signature;
+
+            // Add the new transactions to the list
+
+            if ( newTransactions && newTransactions.length > 0) {
+                console.log('newTransactions Count: ', newTransactions.length);
+                transactions.push(...newTransactions);
+            }
+
+            if (!hasMore) {
+                break;
+            }
+
+            page++;
+
+
+            
+            // set a delay so that we don't hit the rate limit
+            // I have a limit of 10 RPC requests per second so we need to slow down
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+        }
+
+        return {
+          count: transactions.length,
+          transactions,
+          address,
+          hasMore: false,
+          nextBefore: undefined
+        };
+        
+
+      } catch (error) {
+        console.error('Failed to fetch transactions from Helius:', error);
+        throw {
+          error: 'TRANSACTIONS_ERROR',
+          message: 'Failed to fetch transactions'
+        } as ErrorResponse;
+      }
+  }
+
+  async getTransactionsByType(
+    address: string,
+    options: { limit?: number; before?: string; fetchAll?: boolean } = {}
+  ): Promise<TransactionsByTypeResponse> {
+    try {
+      // Get transactions using existing method
+      const { transactions } = await this.getTransactions(address, { 
+        ...options,
+        includeParsedDetails: true 
+      });
+      
+      // Group transactions by type
+      const transactionsByType: { [type: string]: HeliusTransaction[] } = {};
+      
+      transactions.forEach(transaction => {
+        const type = transaction.type || 'UNKNOWN';
+        if (!transactionsByType[type]) {
+          transactionsByType[type] = [];
+        }
+        transactionsByType[type].push(transaction);
+      });
+
+      return {
+        address,
+        transactionsByType,
+        types: Object.keys(transactionsByType).map(type => ({
+          type,
+          count: transactionsByType[type].length || 0
+        })),
+        totalTransactions: transactions.length
+      };
+    } catch (error) {
+      console.error('Failed to fetch transactions by type:', error);
+      throw {
+        error: 'TRANSACTIONS_BY_TYPE_ERROR',
+        message: 'Failed to fetch transactions by type'
       } as ErrorResponse;
     }
   }

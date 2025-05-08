@@ -17,6 +17,7 @@ export interface HistoricalBalanceResponse {
 }
 
 export interface TransactionResponse {
+  count: number;
   transactions: HeliusTransaction[];
   address: string;
   hasMore: boolean;
@@ -73,6 +74,13 @@ export interface HeliusTransaction {
   events: Record<string, any>;
 }
 
+export interface HeliusTransactionResponse {
+  transactions: HeliusTransaction[];
+  address: string;
+  hasMore: boolean;
+  nextBefore?: string;
+}
+
 export interface HeliusTokenTransfer {
   fromUserAccount: string;
   toUserAccount: string;
@@ -105,4 +113,16 @@ export interface HeliusInstruction {
 export interface ErrorResponse {
   error: string;
   message: string;
+}
+
+export interface TransactionsByTypeResponse {
+  address: string;
+  transactionsByType: {
+    [type: string]: HeliusTransaction[];
+  };
+  types: {
+    type: string;
+    count: number;
+  }[];
+  totalTransactions: number;
 } 

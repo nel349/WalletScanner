@@ -11,33 +11,33 @@ GET {{prodUrl}}/
 Content-Type: application/json
 
 ### Validate Wallet (local)
-GET {{localUrl}}/api/wallet/validate/5FHwkrdxkRXbrcMpLNf2Yd9ztnGLYUPzK3n2joTEQv1c
+GET {{localUrl}}/api/solana/validate/5FHwkrdxkRXbrcMpLNf2Yd9ztnGLYUPzK3n2joTEQv1c
 Content-Type: application/json
 
 ### Validate Wallet (production)
-GET {{prodUrl}}/api/wallet/validate/5FHwkrdxkRXbrcMpLNf2Yd9ztnGLYUPzK3n2joTEQv1c
+GET {{prodUrl}}/api/solana/validate/5FHwkrdxkRXbrcMpLNf2Yd9ztnGLYUPzK3n2joTEQv1c
 Content-Type: application/json
 
 ### Get Wallet Balance (local)
-GET {{localUrl}}/api/wallet/balance/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
+GET {{localUrl}}/api/solana/balance/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
 Content-Type: application/json
 
 ### Get Wallet Balance (production)
-GET {{prodUrl}}/api/wallet/balance/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
+GET {{prodUrl}}/api/solana/balance/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
 Content-Type: application/json
 
 ### Get Wallet Transactions (local)
-GET {{localUrl}}/api/wallet/transactions/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
+GET {{localUrl}}/api/solana/transactions/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
 Content-Type: application/json
 
 ### Get Wallet Transactions (production)
-GET {{prodUrl}}/api/wallet/transactions/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
+GET {{prodUrl}}/api/solana/transactions/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
 Content-Type: application/json
 
 ### Get Transaction Details (local)
-GET {{localUrl}}/api/wallet/transaction/3fYrQLEJc1JwNttTruHmY1qBWWq2CaEBnKhuJSX3KHwQ576svSa73WVTiy8wE57veUoquu1QqYudnua44D9wgwx6
+GET {{localUrl}}/api/solana/transaction/3fYrQLEJc1JwNttTruHmY1qBWWq2CaEBnKhuJSX3KHwQ576svSa73WVTiy8wE57veUoquu1QqYudnua44D9wgwx6
 Content-Type: application/json
 
 ### Get Transaction Details (production)
-GET {{prodUrl}}/api/wallet/transaction/3fYrQLEJc1JwNttTruHmY1qBWWq2CaEBnKhuJSX3KHwQ576svSa73WVTiy8wE57veUoquu1QqYudnua44D9wgwx6
+GET {{prodUrl}}/api/solana/transaction/3fYrQLEJc1JwNttTruHmY1qBWWq2CaEBnKhuJSX3KHwQ576svSa73WVTiy8wE57veUoquu1QqYudnua44D9wgwx6
 Content-Type: application/json
