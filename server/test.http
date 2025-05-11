@@ -33,11 +33,3 @@ Content-Type: application/json
 ### Get Wallet Transactions (production)
 GET {{prodUrl}}/api/solana/transactions/AhzZc4d1MrNUbD6N3ZqyD8TviNzY67L8fgE63tRpRKHf
 Content-Type: application/json
-
-### Get Transaction Details (local)
-GET {{localUrl}}/api/solana/transaction/3fYrQLEJc1JwNttTruHmY1qBWWq2CaEBnKhuJSX3KHwQ576svSa73WVTiy8wE57veUoquu1QqYudnua44D9wgwx6
-Content-Type: application/json
-
-### Get Transaction Details (production)
-GET {{prodUrl}}/api/solana/transaction/3fYrQLEJc1JwNttTruHmY1qBWWq2CaEBnKhuJSX3KHwQ576svSa73WVTiy8wE57veUoquu1QqYudnua44D9wgwx6
-Content-Type: application/json

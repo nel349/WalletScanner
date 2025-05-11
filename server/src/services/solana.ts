@@ -98,6 +98,7 @@ export class SolanaService {
         : undefined;
       
       return {
+        count: transactions.length,
         transactions,
         address: publicKey.toString(),
         hasMore,

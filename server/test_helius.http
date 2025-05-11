@@ -4,35 +4,35 @@
 @address = 8fvJhm5p7QQFLRofFHeT1bjNDa8FppZZwLkb6MR257Cp
 @signature = 3HQWFqZZLEXKZTxYfUWyjwBRRaw92tQKJz79ETVHdAxEDCf34zeG9gBuQiAGP85mNwykvtbukqAnCduGEaRqdqko
 ### Get Balance (local)
-GET {{localUrl}}/api/wallet/balance/{{address}}
+GET {{localUrl}}/api/helius/balance/{{address}}
 Content-Type: application/json
 
 ### Validate Wallet (local)
-GET {{localUrl}}/api/wallet/validate/{{address}}
+GET {{localUrl}}/api/helius/validate/{{address}}
 Content-Type: application/json
 
 ### Get Transactions (local)
-GET {{localUrl}}/api/wallet/transactions/{{address}}
+GET {{localUrl}}/api/helius/transactions/{{address}}
 Content-Type: application/json
 
 ### Get Historical Balance (local)
-GET {{localUrl}}/api/wallet/historical-balance/{{address}}
+GET {{localUrl}}/api/helius/historical-balance/{{address}}
 Content-Type: application/json
 
 ### Get Transactions (local) with limit and before
-GET {{localUrl}}/api/wallet/transactions/{{address}}
+GET {{localUrl}}/api/helius/transactions/{{address}}
 Content-Type: application/json
 
 ### Get transactions by type (local)
-GET {{localUrl}}/api/wallet/transactions-by-type/{{address}}
+GET {{localUrl}}/api/helius/transactions-by-type/{{address}}
 Content-Type: application/json
 
 ### Get transactions by type (local) with limit and before
-GET {{localUrl}}/api/wallet/transactions-by-type/{{address}}
+GET {{localUrl}}/api/helius/transactions-by-type/{{address}}
 Content-Type: application/json
 
 ### Get all transactions (local)
-GET {{localUrl}}/api/wallet/transactions-all/{{address}}
+GET {{localUrl}}/api/helius/transactions-all/{{address}}
 Content-Type: application/json
 
 

@@ -1,3 +1,5 @@
+import { ConfirmedSignatureInfo } from "@solana/web3.js";
+
 export interface WalletResponse {
   isValid: boolean;
   address: string;
@@ -18,7 +20,7 @@ export interface HistoricalBalanceResponse {
 
 export interface TransactionResponse {
   count: number;
-  transactions: HeliusTransaction[];
+  transactions: HeliusTransaction[] | ConfirmedSignatureInfo[];
   address: string;
   hasMore: boolean;
   nextBefore?: string;

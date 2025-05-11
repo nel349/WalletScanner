@@ -4,9 +4,9 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
-import { Connection, PublicKey } from '@solana/web3.js';
-import walletRoutes from './routes/wallet';
+import { Connection } from '@solana/web3.js';
 import solanaRoutes from './routes/solana_routes';
+import heliusRoutes from './routes/helius_routes';
 import { networkInterfaces } from 'os';
 
 const app = express();
@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/solana', solanaRoutes);
-app.use('/api/wallet', walletRoutes);
+app.use('/api/helius', heliusRoutes);
 
 // Get local IP address
 const getLocalIpAddress = () => {
