@@ -389,11 +389,11 @@ export class HeliusService {
       const transactionsByType: { [type: string]: HeliusTransaction[] } = {};
       
       transactions.forEach(transaction => {
-        const type = transaction.type || 'UNKNOWN';
+        const type = (transaction as HeliusTransaction).type || 'UNKNOWN';
         if (!transactionsByType[type]) {
           transactionsByType[type] = [];
         }
-        transactionsByType[type].push(transaction);
+        transactionsByType[type].push(transaction as HeliusTransaction);
       });
 
       return {
