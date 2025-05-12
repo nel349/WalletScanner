@@ -3,9 +3,9 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator,
 import { StatusBar } from 'expo-status-bar';
 import { validateWalletAddress, getWalletBalance, getWalletTransactions } from '../utils/solana';
 import { usePhantomWallet, getPhantomWalletBalance } from '../utils/phantom';
-import { ConfirmedSignatureInfo } from '@solana/web3.js';
 import TransactionList from '../components/TransactionList';
 import BalanceChart from '../components/BalanceChart';
+import { HeliusTransaction } from '../../server/src/types';
 
 const WalletScanner = () => {
 
@@ -16,7 +16,7 @@ const WalletScanner = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
-  const [transactions, setTransactions] = useState<ConfirmedSignatureInfo[]>([]);
+  const [transactions, setTransactions] = useState<HeliusTransaction[]>([]);
   const [hasMoreTransactions, setHasMoreTransactions] = useState(false);
   const [nextTransactionBefore, setNextTransactionBefore] = useState<string | undefined>(undefined);
   const { isConnected, walletAddress: phantomAddress, connect, disconnect } = usePhantomWallet();
@@ -58,7 +58,7 @@ const WalletScanner = () => {
         
         if (phantomBalance !== null) {
           setBalance(phantomBalance);
-          setTransactions(walletTransactions.transactions);
+          setTransactions(walletTransactions.transactions as unknown as HeliusTransaction[]);
           setHasMoreTransactions(walletTransactions.hasMore);
           setNextTransactionBefore(walletTransactions.nextBefore);
         } else {
@@ -72,7 +72,7 @@ const WalletScanner = () => {
         ]);
         
         setBalance(walletBalance);
-        setTransactions(walletTransactions.transactions);
+        setTransactions(walletTransactions.transactions as unknown as HeliusTransaction[]);
         setHasMoreTransactions(walletTransactions.hasMore);
         setNextTransactionBefore(walletTransactions.nextBefore);
       }
@@ -95,7 +95,7 @@ const WalletScanner = () => {
       });
       
       // Append new transactions to existing ones
-      setTransactions(prev => [...prev, ...moreTransactions.transactions]);
+      setTransactions(prev => [...prev, ...(moreTransactions.transactions as unknown as HeliusTransaction[])]);
       
       // Update pagination state
       setHasMoreTransactions(moreTransactions.hasMore);

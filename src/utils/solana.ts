@@ -28,7 +28,7 @@ const handleApiError = async (response: Response) => {
 
 export const validateWalletAddress = async (address: string): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/wallet/validate/${address}`, {
+    const response = await fetch(`${API_BASE_URL}${HELIUS_ENDPOINTS.VALIDATE_WALLET}/${address}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ export const getWalletTransactions = async (
 ): Promise<TransactionResponse> => {
   try {
     const { pages = 1, before, includeParsedDetails = true } = options;
-    let url = `${API_BASE_URL}/helius/transactions/${walletAddress}?pages=${pages}`;
+    let url = `${API_BASE_URL}${HELIUS_ENDPOINTS.GET_TRANSACTIONS}/${walletAddress}?pages=${pages}`;
       
     if (before) {
       url += `&before=${before}`;
@@ -114,6 +114,8 @@ export const getHistoricalBalance = async (
 ): Promise<HistoricalBalanceResponse> => {
   try {
     const url = `${API_BASE_URL}${HELIUS_ENDPOINTS.GET_HISTORICAL_BALANCE}/${walletAddress}?timeWindow=${timeWindow}`;
+
+    await new Promise(resolve => setTimeout(resolve, 1000)); // TODO: Remove this after increasing Helius API limit
     
     const response = await fetch(url, {
       method: 'GET',

@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Linking, Alert } from 'react-native';
-import { ConfirmedSignatureInfo } from '@solana/web3.js';
+import { HeliusTransaction } from '../../server/src/types';
 
 interface TransactionListProps {
-  transactions: ConfirmedSignatureInfo[];
+  transactions: HeliusTransaction[];
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
@@ -74,20 +74,20 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions }) => {
               <Text style={styles.signature} numberOfLines={1} ellipsizeMode="middle">
                 {tx.signature}
               </Text>
-              {tx.confirmationStatus && (
-                <Text style={[styles.status, { color: getStatusColor(tx.confirmationStatus) }]}>
-                  {tx.confirmationStatus}
+              {tx.type && (
+                <Text style={[styles.status, { color: getStatusColor(tx.type) }]}>
+                  {tx.type}
                 </Text>
               )}
             </View>
-            <Text style={styles.date}>{formatDate(tx.blockTime)}</Text>
-            {tx.memo && (
+            <Text style={styles.date}>{formatDate(tx.timestamp)}</Text>
+            {tx.description && (
               <Text style={styles.memo} numberOfLines={2}>
-                Memo: {tx.memo}
+                Description: {tx.description}
               </Text>
             )}
-            {tx.err && (
-              <Text style={styles.error}>Error: {tx.err.toString()}</Text>
+            {tx.transactionError && (
+              <Text style={styles.error}>Error: {tx.transactionError.toString()}</Text>
             )}
             <Text style={styles.linkText}>Tap to view on Solscan</Text>
           </TouchableOpacity>
