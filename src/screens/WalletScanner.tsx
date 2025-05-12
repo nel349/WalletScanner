@@ -5,6 +5,7 @@ import { validateWalletAddress, getWalletBalance, getWalletTransactions } from '
 import { usePhantomWallet, getPhantomWalletBalance } from '../utils/phantom';
 import TransactionList from '../components/TransactionList';
 import BalanceChart from '../components/BalanceChart';
+import TransactionTypeChart from '../components/TransactionTypeChart';
 import { HeliusTransaction } from '../../server/src/types';
 
 const WalletScanner = () => {
@@ -226,7 +227,13 @@ const WalletScanner = () => {
         )}
 
         {balance !== null && walletAddress && (
-          <BalanceChart walletAddress={walletAddress} />
+          <>
+            <BalanceChart walletAddress={walletAddress} />
+            <View style={styles.chartContainer}>
+              <Text style={styles.chartTitle}>Transaction Types</Text>
+              <TransactionTypeChart address={walletAddress} pages={DEFAULT_PAGES} />
+            </View>
+          </>
         )}
 
         {transactions.length > 0 && (
@@ -365,6 +372,19 @@ const styles = StyleSheet.create({
   loadMoreText: {
     color: '#FFFFFF',
     fontSize: 14,
+  },
+  chartContainer: {
+    width: '100%',
+    backgroundColor: '#2D3748',
+    borderRadius: 8,
+    padding: 15,
+    marginTop: 20,
+  },
+  chartTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
 });
 

@@ -25,6 +25,8 @@ This document provides a comprehensive breakdown of features for the Solana Wall
 
 ## 3. Interactive Transaction Charts
 - [x] Line chart showing SOL balance over time
+- [ ] Line chart showing token balances over time
+- [x] Pie chart showing transaction types
 - [ ] Transaction volume visualization
 - [ ] Token distribution pie chart
 - [ ] Transaction type breakdown
