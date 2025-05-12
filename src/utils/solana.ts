@@ -1,6 +1,7 @@
 import 'react-native-get-random-values';
 import { Connection, PublicKey, ParsedTransactionWithMeta } from '@solana/web3.js';
 import { WalletResponse, BalanceResponse, TransactionResponse, ParsedTransactionDetails, HistoricalBalanceResponse } from '../types';
+import { HELIUS_ENDPOINTS, LOCAL_IP } from '../../client/src/config';
 
 // Use the public RPC endpoint
 const SOLANA_RPC_URL = 'https://api.mainnet-beta.solana.com';
@@ -10,7 +11,7 @@ export const connection = new Connection(SOLANA_RPC_URL, {
 });
 
 // Update the API base URL to use the correct port
-const API_BASE_URL = 'http://192.168.1.175:3000/api';
+const API_BASE_URL = `http://${LOCAL_IP}:3000/api`;
 
 const handleApiError = async (response: Response) => {
   if (!response.ok) {
@@ -45,15 +46,15 @@ export const validateWalletAddress = async (address: string): Promise<boolean> =
 export const getWalletTransactions = async (
   walletAddress: string,
   options: { 
-    limit?: number,
+    pages?: number,
     before?: string,
     includeParsedDetails?: boolean
   } = {}
 ): Promise<TransactionResponse> => {
   try {
-    const { limit = 20, before, includeParsedDetails = true } = options;
-    let url = `${API_BASE_URL}/wallet/transactions/${walletAddress}?limit=${limit}`;
-    
+    const { pages = 1, before, includeParsedDetails = true } = options;
+    let url = `${API_BASE_URL}/helius/transactions/${walletAddress}?pages=${pages}`;
+      
     if (before) {
       url += `&before=${before}`;
     }
@@ -112,7 +113,7 @@ export const getHistoricalBalance = async (
   timeWindow: '24h' | '1w' | '1m' | '1y' | 'all' = '1m'
 ): Promise<HistoricalBalanceResponse> => {
   try {
-    const url = `${API_BASE_URL}/wallet/historical-balance/${walletAddress}?timeWindow=${timeWindow}`;
+    const url = `${API_BASE_URL}${HELIUS_ENDPOINTS.GET_HISTORICAL_BALANCE}/${walletAddress}?timeWindow=${timeWindow}`;
     
     const response = await fetch(url, {
       method: 'GET',

@@ -6,6 +6,7 @@ import { PhantomWalletConnectionResponse } from '../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
+import { LOCAL_IP } from '../../client/src/config';
 
 // see example here: https://ritikchhipa5.medium.com/connecting-solana-network-on-react-native-with-phantom-wallet-5af46095fe61
 
@@ -18,7 +19,7 @@ const SESSION_KEY = 'PHANTOM_SESSION';
 const APP_URL = Platform.OS === 'web' 
   ? 'walletscanner://' 
   : __DEV__ 
-    ? 'exp://192.168.1.175:8081/' // Use the Expo development URL with path during development 
+    ? `exp://${LOCAL_IP}:8081/` // Use the Expo development URL with path during development 
     : 'walletscanner://'; // Use the app's scheme in production
 
 // Generate a new keypair for this session

@@ -8,6 +8,8 @@ import TransactionList from '../components/TransactionList';
 import BalanceChart from '../components/BalanceChart';
 
 const WalletScanner = () => {
+
+  const DEFAULT_PAGES = 5;
   const [walletAddress, setWalletAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -52,7 +54,7 @@ const WalletScanner = () => {
       // If using connected Phantom wallet, fetch balance directly
       if (isConnected && walletAddress === phantomAddress) {
         const phantomBalance = await getPhantomWalletBalance();
-        const walletTransactions = await getWalletTransactions(walletAddress, { limit: 20 });
+        const walletTransactions = await getWalletTransactions(walletAddress, { pages: DEFAULT_PAGES });
         
         if (phantomBalance !== null) {
           setBalance(phantomBalance);
@@ -66,7 +68,7 @@ const WalletScanner = () => {
         // Use regular API for non-connected wallets
         const [walletBalance, walletTransactions] = await Promise.all([
           getWalletBalance(walletAddress),
-          getWalletTransactions(walletAddress, { limit: 20 })
+          getWalletTransactions(walletAddress, { pages: DEFAULT_PAGES })
         ]);
         
         setBalance(walletBalance);
@@ -88,7 +90,7 @@ const WalletScanner = () => {
     setIsLoadingMore(true);
     try {
       const moreTransactions = await getWalletTransactions(walletAddress, {
-        limit: 20,
+        pages: DEFAULT_PAGES,
         before: nextTransactionBefore
       });
       
