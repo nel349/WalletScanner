@@ -91,9 +91,9 @@ export const getTransactionDetails = async (signature: string): Promise<ParsedTr
   }
 };
 
-export const getWalletBalance = async (walletAddress: string, limit: number = 3): Promise<number> => {
+export const getWalletBalance = async (walletAddress: string): Promise<number> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/wallet/balance/${walletAddress}?limit=${limit}`, {
+    const response = await fetch(`${API_BASE_URL}${HELIUS_ENDPOINTS.GET_BALANCE}/${walletAddress}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

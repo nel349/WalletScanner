@@ -188,7 +188,7 @@ const BalanceChart: React.FC<BalanceChartProps> = ({ walletAddress }) => {
     backgroundGradientTo: '#08130D',
     color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
     strokeWidth: 2,
-    decimalPlaces: 1,
+    decimalPlaces: 3,
     yAxisMin: 0, // Ensure y-axis always starts from 0
     yAxisSuffix: ' SOL',
     xAxisLabelRotation: 30, // Rotate labels to prevent overlap
