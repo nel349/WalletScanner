@@ -22,7 +22,7 @@ interface HistoricalBalanceResponse {
 export class HeliusService {
   private baseUrl: string;
   private apiKey: string;
-  private readonly RATE_LIMIT = 5; // requests per second
+  private readonly RATE_LIMIT = 7; // requests per second
   private readonly RATE_WINDOW = 1000; // 1 second in milliseconds
   private requestTimestamps: number[] = [];
 
@@ -301,7 +301,7 @@ export class HeliusService {
       timestamp => now - timestamp < this.RATE_WINDOW
     );
     
-    // If we've made 10 requests in the last second, wait
+    // If we've made N requests in the last second, wait
     if (this.requestTimestamps.length >= this.RATE_LIMIT) {
       const oldestTimestamp = this.requestTimestamps[0];
       const waitTime = this.RATE_WINDOW - (now - oldestTimestamp);
@@ -314,7 +314,7 @@ export class HeliusService {
     this.requestTimestamps.push(Date.now());
   }
 
-  async fetchAllTransactions(address: string): Promise<TransactionResponse> {
+  async fetchTransactions(address: string, options: { pages?: number } = {}): Promise<TransactionResponse> {
     try {
       const url = `${this.baseUrl}/v0/addresses/${address}/transactions`;
       const params: any = {
@@ -325,8 +325,8 @@ export class HeliusService {
       let transactions: HeliusTransaction[] = [];
       let lastSignature: string | null = null;
       let page = 0;
-      
-      while (true) {
+      const { pages = 1 } = options;
+      while (page < pages) {
         console.log('Page: ', page);
         
         // Wait for rate limit before making the request
@@ -376,13 +376,12 @@ export class HeliusService {
 
   async getTransactionsByType(
     address: string,
-    options: { limit?: number; before?: string; fetchAll?: boolean } = {}
+    options: { pages?: number; before?: string; fetchAll?: boolean } = {}
   ): Promise<TransactionsByTypeResponse> {
     try {
       // Get transactions using existing method
-      const { transactions } = await this.getTransactions(address, { 
-        ...options,
-        includeParsedDetails: true 
+      const { transactions } = await this.fetchTransactions(address, { 
+        ...options
       });
       
       // Group transactions by type
@@ -397,13 +396,13 @@ export class HeliusService {
       });
 
       return {
+        totalTransactions: transactions.length,
         address,
-        transactionsByType,
+        // transactionsByType,
         types: Object.keys(transactionsByType).map(type => ({
           type,
           count: transactionsByType[type].length || 0
         })),
-        totalTransactions: transactions.length
       };
     } catch (error) {
       console.error('Failed to fetch transactions by type:', error);

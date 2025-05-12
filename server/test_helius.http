@@ -28,14 +28,16 @@ GET {{localUrl}}/api/helius/transactions-by-type/{{address}}
 Content-Type: application/json
 
 ### Get transactions by type (local) with limit and before
-GET {{localUrl}}/api/helius/transactions-by-type/{{address}}
+GET {{localUrl}}/api/helius/transactions-by-type/{{address}}?pages=10
 Content-Type: application/json
 
 ### Get all transactions (local)
 GET {{localUrl}}/api/helius/transactions-all/{{address}}
 Content-Type: application/json
 
-
+### Get transactions (local) with pages limit
+GET {{localUrl}}/api/helius/transactions/{{address}}?pages=10
+Content-Type: application/json
 
 
 

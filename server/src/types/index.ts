@@ -119,7 +119,7 @@ export interface ErrorResponse {
 
 export interface TransactionsByTypeResponse {
   address: string;
-  transactionsByType: {
+  transactionsByType?: {
     [type: string]: HeliusTransaction[];
   };
   types: {

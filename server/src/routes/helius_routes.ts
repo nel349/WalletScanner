@@ -38,14 +38,10 @@ router.get('/historical-balance/:address', async (req, res) => {
 router.get('/transactions/:address', async (req, res) => {
   try {
     const { address } = req.params;
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
-    const before = req.query.before as string | undefined;
-    const includeParsedDetails = req.query.includeParsedDetails !== 'false'; // default to true
-    
-    const result = await heliusService.getTransactions(address, { 
-      limit, 
-      before,
-      includeParsedDetails
+    const pages = req.query.pages ? parseInt(req.query.pages as string, 10) : 1;
+    console.log('Fetching transactions for address:', address, 'with pages:', pages);
+    const result = await heliusService.fetchTransactions(address, { 
+      pages,
     });
     res.json(result);
   } catch (error) {
@@ -56,15 +52,15 @@ router.get('/transactions/:address', async (req, res) => {
 router.get('/transactions-by-type/:address', async (req, res) => {
   try {
     const { address } = req.params;
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
     const before = req.query.before as string | undefined;
     const fetchAll = req.query.fetchAll === 'true' || req.query.limit === 'all';
+    const pages = req.query.pages ? parseInt(req.query.pages as string, 10) : 1;
 
     console.log('Fetching all transactions by type:', fetchAll);
     const result = await heliusService.getTransactionsByType(address, { 
-      limit, 
       before,
-      fetchAll
+      fetchAll,
+      pages
     });
     res.json(result);
   } catch (error) {
@@ -75,7 +71,7 @@ router.get('/transactions-by-type/:address', async (req, res) => {
 router.get('/transactions-all/:address', async (req, res) => {
   try {
     const { address } = req.params;
-    const result = await heliusService.fetchAllTransactions(address);
+    const result = await heliusService.fetchTransactions(address);
 
     res.json(result);
   } catch (error) {
