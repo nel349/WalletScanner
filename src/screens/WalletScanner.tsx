@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Linking, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Linking, ScrollView, Modal, Pressable, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { validateWalletAddress, getWalletBalance, getWalletTransactions } from '../utils/solana';
 import { usePhantomWallet, getPhantomWalletBalance } from '../utils/phantom';
@@ -7,6 +7,8 @@ import TransactionList from '../components/TransactionList';
 import BalanceChart from '../components/BalanceChart';
 import TransactionTypeChart from '../components/TransactionTypeChart';
 import { HeliusTransaction } from '../../server/src/types';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const WalletScanner = () => {
 
@@ -21,6 +23,34 @@ const WalletScanner = () => {
   const [hasMoreTransactions, setHasMoreTransactions] = useState(false);
   const [nextTransactionBefore, setNextTransactionBefore] = useState<string | undefined>(undefined);
   const { isConnected, walletAddress: phantomAddress, connect, disconnect } = usePhantomWallet();
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+
+  const resetFirstLaunch = async () => {
+    try {
+      await AsyncStorage.removeItem('hasLaunched');
+      Alert.alert('Success', 'First launch state cleared. Restart the app to see the welcome screen.');
+    } catch (error) {
+      console.error('Error clearing first launch:', error);
+      Alert.alert('Error', 'Failed to clear first launch state');
+    }
+  };
+
+  // Check if it's first launch
+  useEffect(() => {
+    const checkFirstLaunch = async () => {
+      try {
+        const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+        if (!hasLaunched) {
+          setShowWelcomeModal(true);
+          await AsyncStorage.setItem('hasLaunched', 'true');
+        }
+      } catch (error) {
+        console.error('Error checking first launch:', error);
+      }
+    };
+    checkFirstLaunch();
+  }, []);
 
   // When Phantom wallet connects, update the wallet address
   useEffect(() => {
@@ -159,7 +189,104 @@ const WalletScanner = () => {
     >
       <View style={styles.container}>
         <StatusBar style="light" />
-        <Text style={styles.title}>Wallet Scanner</Text>
+        <View style={styles.headerContainer}>
+          <Text style={styles.title}>Wallet Scanner</Text>
+          <TouchableOpacity 
+            style={styles.infoButton}
+            onPress={() => setShowPermissionsModal(true)}
+          >
+            <Ionicons name="information-circle-outline" size={24} color="#A0AEC0" />
+          </TouchableOpacity>
+        </View>
+        
+        {/* Debug button - only visible in development */}
+        {__DEV__ && (
+          <TouchableOpacity
+            style={styles.debugButton}
+            onPress={resetFirstLaunch}
+          >
+            <Ionicons name="refresh-outline" size={14} color="#4B5CFA" />
+            <Text style={styles.debugButtonText}>Reset First Launch</Text>
+          </TouchableOpacity>
+        )}
+        
+        {/* Welcome Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={showWelcomeModal}
+          onRequestClose={() => setShowWelcomeModal(false)}
+        >
+          <View style={styles.welcomeModalOverlay}>
+            <View style={styles.welcomeModalContent}>
+              <View style={styles.welcomeHeader}>
+                <Ionicons name="shield-checkmark" size={40} color="#4B5CFA" />
+                <Text style={styles.welcomeTitle}>Welcome to Wallet Scanner!</Text>
+              </View>
+              
+              <View style={styles.welcomeSection}>
+                <Text style={styles.welcomeSubtitle}>Your Privacy Matters</Text>
+                <Text style={styles.welcomeText}>
+                  We're committed to transparency and privacy. Here's what you should know:
+                </Text>
+              </View>
+
+              <View style={styles.permissionItem}>
+                <Ionicons name="eye-outline" size={24} color="#4B5CFA" />
+                <Text style={styles.permissionText}>Read-only access to public blockchain data</Text>
+              </View>
+
+              <View style={styles.permissionItem}>
+                <Ionicons name="wallet-outline" size={24} color="#4B5CFA" />
+                <Text style={styles.permissionText}>View-only access when connecting Phantom wallet</Text>
+              </View>
+
+              <View style={styles.permissionItem}>
+                <Ionicons name="lock-closed-outline" size={24} color="#4B5CFA" />
+                <Text style={styles.permissionText}>No private keys or sensitive data stored</Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.welcomeButton}
+                onPress={() => setShowWelcomeModal(false)}
+              >
+                <Text style={styles.welcomeButtonText}>Got it!</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        
+        {/* Existing Permissions Modal */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={showPermissionsModal}
+          onRequestClose={() => setShowPermissionsModal(false)}
+        >
+          <Pressable 
+            style={styles.modalOverlay}
+            onPress={() => setShowPermissionsModal(false)}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Permissions & Privacy</Text>
+                <TouchableOpacity 
+                  onPress={() => setShowPermissionsModal(false)}
+                  style={styles.closeButton}
+                >
+                  <Ionicons name="close" size={24} color="#A0AEC0" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.modalText}>
+                • Basic scanning: Read-only access to public blockchain data{'\n\n'}
+                • Phantom connection: View wallet address and balance{'\n\n'}
+                • No private keys or sensitive data stored{'\n\n'}
+                • All data is fetched in real-time from the blockchain{'\n\n'}
+                • No data is stored on our servers
+              </Text>
+            </View>
+          </Pressable>
+        </Modal>
         
         {isConnected ? (
           <View style={styles.connectedContainer}>
@@ -271,11 +398,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: '100%',
   },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginBottom: 10,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
@@ -385,6 +518,128 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+  },
+  infoButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#2D3748',
+    borderRadius: 12,
+    padding: 20,
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  modalTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalText: {
+    color: '#A0AEC0',
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  welcomeModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  welcomeModalContent: {
+    backgroundColor: '#2D3748',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  welcomeHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  welcomeTitle: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  welcomeSection: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  welcomeSubtitle: {
+    color: '#4B5CFA',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  welcomeText: {
+    color: '#A0AEC0',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  permissionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1A1F2E',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    width: '100%',
+  },
+  permissionText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    marginLeft: 12,
+    flex: 1,
+  },
+  welcomeButton: {
+    backgroundColor: '#4B5CFA',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    marginTop: 24,
+    width: '100%',
+  },
+  welcomeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  debugButton: {
+    backgroundColor: '#3A4556',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#4B5CFA',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  debugButtonText: {
+    color: '#A0AEC0',
+    fontSize: 12,
+    marginLeft: 4,
   },
 });
 

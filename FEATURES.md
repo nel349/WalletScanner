@@ -44,10 +44,10 @@ This document provides a comprehensive breakdown of features for the Solana Wall
 - [ ] Custom branding/watermarks
 
 ## 6. Privacy-First Design
-- [ ] No wallet connection required for basic scanning
-- [ ] Clear disclosure of permissions
-- [ ] No storage of sensitive data
-- [ ] Read-only operations
+- [x] No wallet connection required for basic scanning
+- [x] Clear disclosure of permissions
+- [x] No storage of sensitive data
+- [x] Read-only operations
 
 ## 7. Mobile-Optimized UI
 - [ ] Responsive design for all screen sizes
