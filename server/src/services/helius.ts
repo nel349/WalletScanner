@@ -7,7 +7,8 @@ import {
   ErrorResponse, 
   HeliusTransaction,
   TransactionsByTypeResponse, 
-  HeliusTransactionResponse
+  TokenBalancesResponse,
+  TokenInfo
 } from '../types';
 
 // Interface for historical balance response
@@ -409,6 +410,90 @@ export class HeliusService {
       throw {
         error: 'TRANSACTIONS_BY_TYPE_ERROR',
         message: 'Failed to fetch transactions by type'
+      } as ErrorResponse;
+    }
+  }
+
+  // Add new method for token balances
+  async getTokenBalances(address: string, customApiKey?: string): Promise<TokenBalancesResponse> {
+    try {
+      await this.waitForRateLimit();
+      
+      // Use Helius RPC endpoint with getTokenAccountsByOwner method
+      const apiKey = customApiKey || this.apiKey;
+      const url = `https://mainnet.helius-rpc.com/?api-key=${apiKey}`;
+      // console.log(`Using Helius API URL: ${url.split('?')[0]} (API key in query param)`);
+      // console.log(`API Key available: ${apiKey ? 'Yes (masked)' : 'No'}`);
+      
+      const requestData = {
+        jsonrpc: "2.0",
+        id: "1",
+        method: "getTokenAccountsByOwner",
+        params: [
+          address,
+          {
+            programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" // SPL Token program ID
+          },
+          {
+            encoding: "jsonParsed"
+          }
+        ]
+      };
+      // console.log('Request data:', JSON.stringify(requestData, null, 2));
+      
+      const response = await axios.post(url, requestData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Debug the response
+      if (response.data && response.data.error) {
+        console.error('Error from Helius API:', response.data.error);
+      }
+      
+      // Process response data
+      if (response.data && response.data.result && response.data.result.value) {
+        const tokenAccounts = response.data.result.value;
+        
+        // Extract token information
+        const tokens: TokenInfo[] = tokenAccounts
+          .map((account: any) => {
+            try {
+              const parsedInfo = account.account.data.parsed.info;
+              return {
+                mint: parsedInfo.mint,
+                owner: parsedInfo.owner,
+                amount: parsedInfo.tokenAmount.amount,
+                decimals: parsedInfo.tokenAmount.decimals,
+                uiAmount: parsedInfo.tokenAmount.uiAmount
+              };
+            } catch (err) {
+              console.error('Error parsing token account:', err);
+              return null;
+            }
+          })
+          .filter((token: TokenInfo | null): token is TokenInfo => 
+            token !== null && token.uiAmount > 0
+          );
+        
+        return {
+          address,
+          tokens
+        };
+      }
+      
+      // Return empty array if no token accounts found
+      return {
+        address,
+        tokens: []
+      };
+    } catch (error) {
+      console.error('Failed to fetch token balances:', error);
+      console.error('Error details:', error);
+      throw {
+        error: 'TOKEN_BALANCE_ERROR',
+        message: 'Failed to fetch token balances'
       } as ErrorResponse;
     }
   }

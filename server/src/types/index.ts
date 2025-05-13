@@ -127,4 +127,20 @@ export interface TransactionsByTypeResponse {
     count: number;
   }[];
   totalTransactions: number;
+}
+
+export interface TokenInfo {
+  mint: string;
+  owner: string;
+  amount: string;
+  decimals: number;
+  uiAmount: number;
+  symbol?: string;
+  name?: string;
+  logo?: string;
+}
+
+export interface TokenBalancesResponse {
+  address: string;
+  tokens: TokenInfo[];
 } 

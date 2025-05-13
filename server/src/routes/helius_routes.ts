@@ -79,4 +79,16 @@ router.get('/transactions-all/:address', async (req, res) => {
   }
 });
 
+router.get('/token-balances/:address', async (req, res) => {
+  try {
+    const { address } = req.params;
+    // Allow overriding the API key for testing
+    const apiKey = req.query.apiKey as string;
+    const result = await heliusService.getTokenBalances(address, apiKey);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json(error);
+  }
+});
+
 export default router; 
