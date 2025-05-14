@@ -138,6 +138,11 @@ export interface TokenInfo {
   symbol?: string;
   name?: string;
   logo?: string;
+  pricePerToken?: number;
+  totalPrice?: number;
+  currency?: string;
+  supply?: string;
+  tokenProgram?: string;
 }
 
 export interface TokenBalancesResponse {

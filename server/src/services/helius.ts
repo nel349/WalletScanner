@@ -419,82 +419,63 @@ export class HeliusService {
     try {
       await this.waitForRateLimit();
       
-      // Use Helius RPC endpoint with getTokenAccountsByOwner method
+      // Use Helius RPC endpoint with searchAssets method
       const apiKey = customApiKey || this.apiKey;
       const url = `https://mainnet.helius-rpc.com/?api-key=${apiKey}`;
-      // console.log(`Using Helius API URL: ${url.split('?')[0]} (API key in query param)`);
-      // console.log(`API Key available: ${apiKey ? 'Yes (masked)' : 'No'}`);
       
-      const requestData = {
+      const response = await axios.post(url, {
         jsonrpc: "2.0",
         id: "1",
-        method: "getTokenAccountsByOwner",
-        params: [
-          address,
-          {
-            programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" // SPL Token program ID
-          },
-          {
-            encoding: "jsonParsed"
+        method: "searchAssets",
+        params: {
+          ownerAddress: address,
+          tokenType: "fungible", // Only get fungible tokens (SPL)
+          options: {
+            showZeroBalance: false
           }
-        ]
-      };
-      // console.log('Request data:', JSON.stringify(requestData, null, 2));
-      
-      const response = await axios.post(url, requestData, {
+        }
+      }, {
         headers: {
           'Content-Type': 'application/json'
         }
       });
       
-      // Debug the response
-      if (response.data && response.data.error) {
-        console.error('Error from Helius API:', response.data.error);
+      // Process results and extract token info
+      const tokens: TokenInfo[] = [];
+      
+      if (response.data && response.data.result && response.data.result.items) {
+        for (const item of response.data.result.items) {
+          if (item.interface === "FungibleToken") {
+            const tokenInfo = {
+              mint: item.id,
+              owner: address,
+              amount: item.token_info?.balance?.toString() || "0",
+              decimals: item.token_info?.decimals || 0,
+              uiAmount: parseFloat(item.token_info?.balance || 0) / Math.pow(10, item.token_info?.decimals || 0),
+              symbol: item.content?.metadata?.symbol || "",
+              name: item.content?.metadata?.name || "",
+              logo: item.content?.links?.image || item.content?.files?.[0]?.uri || "",
+              pricePerToken: item.token_info?.price_info?.price_per_token,
+              totalPrice: item.token_info?.price_info?.total_price,
+              currency: item.token_info?.price_info?.currency,
+              supply: item.token_info?.supply?.toString(),
+              tokenProgram: item.token_info?.token_program
+            };
+            tokens.push(tokenInfo);
+          }
+        }
       }
       
-      // Process response data
-      if (response.data && response.data.result && response.data.result.value) {
-        const tokenAccounts = response.data.result.value;
-        
-        // Extract token information
-        const tokens: TokenInfo[] = tokenAccounts
-          .map((account: any) => {
-            try {
-              const parsedInfo = account.account.data.parsed.info;
-              return {
-                mint: parsedInfo.mint,
-                owner: parsedInfo.owner,
-                amount: parsedInfo.tokenAmount.amount,
-                decimals: parsedInfo.tokenAmount.decimals,
-                uiAmount: parsedInfo.tokenAmount.uiAmount
-              };
-            } catch (err) {
-              console.error('Error parsing token account:', err);
-              return null;
-            }
-          })
-          .filter((token: TokenInfo | null): token is TokenInfo => 
-            token !== null && token.uiAmount > 0
-          );
-        
-        return {
-          address,
-          tokens
-        };
-      }
-      
-      // Return empty array if no token accounts found
       return {
-        address,
-        tokens: []
+        address: address,
+        tokens: tokens
       };
     } catch (error) {
-      console.error('Failed to fetch token balances:', error);
-      console.error('Error details:', error);
+      console.error('Error fetching token balances:', error);
       throw {
-        error: 'TOKEN_BALANCE_ERROR',
-        message: 'Failed to fetch token balances'
-      } as ErrorResponse;
+        error: 'Failed to fetch token balances',
+        details: error
+      };
     }
   }
 }

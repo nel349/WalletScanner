@@ -39,6 +39,10 @@ Content-Type: application/json
 GET {{localUrl}}/api/helius/transactions/{{address}}?pages=10
 Content-Type: application/json
 
+### Get token balances (local)
+GET {{localUrl}}/api/helius/token-balances/BXGGWJNxo6vv5HK5YuSrgRQKEQij7X2zFUMGpXPnU5z7
+Content-Type: application/json
+
 
 
 
