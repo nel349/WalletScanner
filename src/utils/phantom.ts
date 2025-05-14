@@ -267,16 +267,15 @@ export const usePhantomWallet = () => {
       console.log('Received deep link:', url);
       
       // For development mode, we might get a callback without the expected parameters
-      if (__DEV__ && url.startsWith('exp://') && !url.includes('data=')) {
-        console.log('Development mode detected - using simulated Phantom connection');
-        // In development mode, we'll simulate a successful connection
-        // Store a test address for development
-        const testWalletAddress = 'G19yP5LGpKwVipr2VLcg25e1iSJTJwtxeuaHvsRoxJn6';
-        await AsyncStorage.setItem(WALLET_STORAGE_KEY, testWalletAddress);
-        setIsConnected(true);
-        setWalletAddress(testWalletAddress);
-        return;
-      }
+      // if (__DEV__ && url.startsWith('exp://') && !url.includes('data=')) {
+      //   console.log('Development mode detected - using simulated Phantom connection');
+      //   // In development mode, we'll simulate a successful connection
+      //   // Store a test address for development
+      //   const testWalletAddress = 'G19yP5LGpKwVipr2VLcg25e1iSJTJwtxeuaHvsRoxJn6';
+      //   setIsConnected(true);
+      //   setWalletAddress(testWalletAddress);
+      //   return;
+      // }
       
       // Both Expo development URL and walletscanner:// URL can be phantom callbacks
       const isPhantomCallback = (

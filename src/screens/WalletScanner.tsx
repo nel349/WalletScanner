@@ -36,7 +36,7 @@ const WalletScanner = () => {
     }
   };
 
-  // Check if it's first launch
+  // Check if it's first launch and set initial wallet address if Phantom is connected
   useEffect(() => {
     const checkFirstLaunch = async () => {
       try {
@@ -49,18 +49,25 @@ const WalletScanner = () => {
         console.error('Error checking first launch:', error);
       }
     };
+    
     checkFirstLaunch();
-  }, []);
-
-  // When Phantom wallet connects, update the wallet address
-  useEffect(() => {
+    
+    // If Phantom wallet is already connected on mount, set the wallet address
     if (isConnected && phantomAddress) {
       setWalletAddress(phantomAddress);
+    }
+
+  }, [isConnected, phantomAddress]); // Added dependencies to re-run if connection status or address changes after initial mount
+
+  // When Phantom wallet connects via deep link AFTER initial mount, update the wallet address
+  // This effect handles cases where the connection happens while the app is open
+  useEffect(() => {
+    if (isConnected && phantomAddress) {
+      // walletAddress is already set by the previous effect or initial check
       setIsConnecting(false);
-      
       console.log('Phantom wallet connected:', phantomAddress);
       // Auto-scan when wallet is connected
-      // handleScan();
+      // handleScan(); // Uncomment this line if you want to auto-scan on connection
     }
   }, [isConnected, phantomAddress]);
 
