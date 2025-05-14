@@ -9,22 +9,23 @@ This document provides a comprehensive breakdown of features for the Solana Wall
 - [x] Option to connect own wallet via Phantom
 
 ## 2. Transaction Data Fetching
-- [ ] Retrieve transaction history from Solana blockchain
+- [x] Retrieve transaction history from Solana blockchain
     - ### **For retrieving transaction history:** 
 
     - [x] - Fetching more than the default 10 transactions
     - [x] - Parsing transaction details (type, amount, parties)
-    - [ ] - Organizing transactions by type
+    - [x] - Organizing transactions by type
     - [x] - Handling pagination for large transaction histories
     - [x] - Processing transaction data for visualization
 
 
 - [ ] Fetch token balances (SOL and SPL tokens)
-- [ ] Parse transaction types (transfers, swaps, staking)
-- [ ] Calculate historical balances over time
+- [x] Parse transaction types (transfers, swaps, staking)
+- [x] Calculate historical balances over time
 
 ## 3. Interactive Transaction Charts
 - [x] Line chart showing SOL balance over time
+- [x] Display token balances with a nice UX (with logo, name, symbol, amount, price, total price, etc. )
 - [ ] Line chart showing token balances over time
 - [x] Pie chart showing transaction types
 - [ ] Transaction volume visualization
