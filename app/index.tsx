@@ -1,22 +1,23 @@
 import React, { useEffect } from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Linking, Button, View, Text, StyleSheet } from 'react-native';
+import { Linking, Button, View, Text, StyleSheet, Platform } from 'react-native';
 import * as ExpoLinking from 'expo-linking';
 import WalletScanner from '../src/screens/WalletScanner';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-function App() {
-  // Set up additional deep link logging at app level
+// Renamed from App to HomeScreen to better reflect its role in Expo Router
+export default function HomeScreen() {
+  // Set up additional deep link logging
   useEffect(() => {
     // Log any initial URL that opened the app
     Linking.getInitialURL().then(url => {
       if (url) {
-        console.log('App opened with URL (from App component):', url);
+        console.log('App opened with URL (from Home screen):', url);
       }
     });
 
     // Listen for new URLs
     const subscription = Linking.addEventListener('url', ({ url }) => {
-      console.log('App received URL (from App component):', url);
+      console.log('App received URL (from Home screen):', url);
     });
 
     // Log the app's URL scheme for debugging
@@ -53,7 +54,7 @@ function App() {
   const isDev = false;
 
   return (
-    <SafeAreaProvider>
+    <View style={styles.container}>
       <WalletScanner />
       {isDev && (
         <View style={styles.debugContainer}>
@@ -64,11 +65,15 @@ function App() {
           />
         </View>
       )}
-    </SafeAreaProvider>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#1A1F2E',
+  },
   debugContainer: {
     position: 'absolute',
     bottom: 20,
@@ -85,5 +90,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-export default App;

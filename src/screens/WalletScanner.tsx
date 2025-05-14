@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Linking, ScrollView, Modal, Pressable, Image } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { validateWalletAddress, getWalletBalance, getWalletTransactions } from '../utils/solana';
 import { usePhantomWallet, getPhantomWalletBalance } from '../utils/phantom';
 import TransactionList from '../components/TransactionList';
@@ -186,10 +185,9 @@ const WalletScanner = () => {
 
   return (
     <ScrollView style={styles.scrollContainer}
-    contentContainerStyle={{ flexGrow: 1 }}
+    contentContainerStyle={styles.scrollContentContainer}
     >
       <View style={styles.container}>
-        <StatusBar style="light" />
         <View style={styles.headerContainer}>
           <Text style={styles.title}>Wallet Scanner</Text>
           <TouchableOpacity 
@@ -396,6 +394,10 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     backgroundColor: '#1A1F2E',
+  },
+  scrollContentContainer: {
+    flexGrow: 1,
+    paddingBottom: 30,
   },
   container: {
     padding: 20,
