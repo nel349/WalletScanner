@@ -6,6 +6,7 @@ import { usePhantomWallet, getPhantomWalletBalance } from '../utils/phantom';
 import TransactionList from '../components/TransactionList';
 import BalanceChart from '../components/BalanceChart';
 import TransactionTypeChart from '../components/TransactionTypeChart';
+import TokenBalances from '../components/TokenBalances';
 import { HeliusTransaction } from '../../server/src/types';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -381,6 +382,10 @@ const WalletScanner = () => {
               </TouchableOpacity>
             )}
           </>
+        )}
+
+        {balance !== null && walletAddress && (
+          <TokenBalances walletAddress={walletAddress} />
         )}
       </View>
     </ScrollView>

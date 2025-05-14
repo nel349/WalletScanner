@@ -14,4 +14,5 @@ export const HELIUS_ENDPOINTS = {
   GET_TRANSACTIONS_BY_TYPE: '/helius/transactions-by-type',
   GET_TRANSACTIONS_ALL: '/helius/transactions-all',
   GET_HISTORICAL_BALANCE: '/helius/historical-balance',
+  GET_TOKEN_BALANCES: '/helius/token-balances',
 };
