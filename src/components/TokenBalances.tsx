@@ -257,6 +257,7 @@ const TokenBalances: React.FC<TokenBalancesProps> = ({ walletAddress }) => {
         keyExtractor={(item) => item.mint}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={false}
       />
     </View>
   );
